@@ -1,0 +1,93 @@
+{
+  "Custom Component": {
+    "prefix": "cc",
+    "body": [
+      "import React from 'react'",
+      "",
+      "export const ${TM_FILENAME_BASE}: React.FC = () => {",
+      "  return <div>${TM_FILENAME_BASE}</div>;",
+      "};"
+    ],
+    "description": "Создает компонент с динамическим названием, основанным на имени файла"
+  },
+  "Import Custom Modules": {
+    "prefix": "imp",
+    "body": [
+      "import {text} from '../text';",
+      "import {hooks} from '../hooks';",
+      "import {utils} from '../utils';",
+      "import {custom} from '../custom';",
+      "import {svg} from '../assets/svg';",
+      "import {theme} from '../constants';",
+      "import {components} from '../components';"
+    ],
+    "description": "Импортировать пользовательские модули"
+  },
+  "renderHeader": {
+    "prefix": "rh",
+    "body": [
+      "const renderHeader = (): JSX.Element => {",
+      "  return <components.Header />;",
+      "};"
+    ],
+    "description": "Рендерит шапку"
+  },
+  "renderContent": {
+    "prefix": "rc",
+    "body": [
+      "const renderContent = (): JSX.Element => {",
+      "  return <main>Content</main>;",
+      "};"
+    ],
+    "description": "Рендерит контент"
+  },
+  "returnJSX": {
+    "prefix": "rjsx",
+    "body": [
+      "return (",
+      "  <div id='screen'>",
+      "    {renderHeader()}",
+      "    {renderContent()}",
+      "  </div>",
+      ");"
+    ],
+    "description": "Рендерит JSX return"
+  },
+  "useAppNavigate": {
+    "prefix": "un",
+    "body": [
+      "const navigate = hooks.useAppNavigate();"
+    ],
+    "description": "Использует хук useAppNavigate"
+  },
+  "useStateSnippet": {
+    "prefix": "useState",
+    "body": [
+      "const [${1:state}, ${2:setState}] = React.useState(${3:initialValue});"
+    ],
+    "description": "Создает состояние с помощью useState"
+  },
+  "renderBottomTabBar": {
+    "prefix": "renderBottomTabBar",
+    "body": [
+      "const renderBottomTabBar = () => {",
+      "  return <components.BottomTabBar />;",
+      "};"
+    ],
+    "description": "Рендерит BottomTabBar компонент"
+  },
+  "typeProps": {
+      "prefix": "typeProps",
+      "body": [
+        "type Props = {};",
+      ],
+      "description": "Создает тип Props"
+    },
+  "ic": {
+    "prefix": "ic",
+    "body": [
+      "import {${1:components}} from '../${1:components}';"
+    ],
+    "description": "Импортирует компонент"
+  }
+}
