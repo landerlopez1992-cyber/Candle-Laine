@@ -27,6 +27,10 @@ const stack = createBrowserRouter([
     element: <screens.FAQ />,
   },
   {
+    path: Routes.TermsAndConditions,
+    element: <screens.TermsAndConditions />,
+  },
+  {
     path: Routes.AdminCategoryDetail,
     element: <screens.AdminCategoryDetail />,
   },
@@ -79,10 +83,6 @@ const stack = createBrowserRouter([
     element: <screens.NewPassword />,
   },
   {
-    path: Routes.Filter,
-    element: <screens.Filter />,
-  },
-  {
     path: Routes.SignUp,
     element: <screens.SignUp />,
   },
@@ -97,10 +97,6 @@ const stack = createBrowserRouter([
   {
     path: Routes.OrderSuccessful,
     element: <screens.OrderSuccessful />,
-  },
-  {
-    path: Routes.Filter,
-    element: <screens.Filter />,
   },
   {
     path: Routes.Checkout,

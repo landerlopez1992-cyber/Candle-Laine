@@ -1,0 +1,12 @@
+// Carruseles del home (administrables): bullets del paginador Swiper
+.home-banner-swiper {
+  .swiper-pagination-bullet {
+    background: var(--white-color);
+    opacity: 0.45;
+  }
+
+  .swiper-pagination-bullet-active {
+    background: var(--accent-color);
+    opacity: 1;
+  }
+}

@@ -38,14 +38,18 @@ export const Wishlist: React.FC = () => {
     return (
       <main
         className='container scrollable'
-        style={{paddingTop: 16, backgroundColor: 'var(--white-color)'}}
+        style={{
+          paddingTop: 16,
+          paddingBottom: 24,
+          backgroundColor: 'var(--main-background)',
+        }}
       >
         {wishlist.list.map(
           (product: ProductType, index: number, array: ProductType[]) => {
             const isLast = index === array.length - 1;
             return (
               <items.WishlistItem
-                key={index}
+                key={String(product.id)}
                 isLast={isLast}
                 product={product}
               />

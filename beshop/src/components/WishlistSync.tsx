@@ -3,30 +3,32 @@ import {useDispatch, useSelector} from 'react-redux';
 
 import {RootState, store} from '../store';
 import {actions} from '../store/actions';
-import {resetCart} from '../store/slices/cartSlice';
 import {supabase} from '../supabaseClient';
-import {loadUserCart, syncCartToServer} from '../utils/cartPersistence';
+import {
+  loadUserWishlist,
+  syncWishlistToServer,
+} from '../utils/wishlistPersistence';
 
-async function reconcileCartWithServer(userId: string): Promise<void> {
-  const serverList = await loadUserCart(userId);
-  const localList = store.getState().cartSlice.list;
+async function reconcileWishlistWithServer(userId: string): Promise<void> {
+  const serverList = await loadUserWishlist(userId);
+  const localList = store.getState().wishlistSlice.list;
   if (serverList.length > 0) {
-    store.dispatch(actions.hydrateCart(serverList));
+    store.dispatch(actions.setWishlist(serverList));
   } else if (localList.length > 0) {
-    store.dispatch(actions.hydrateCart(localList));
-    await syncCartToServer(userId, localList);
+    store.dispatch(actions.setWishlist(localList));
+    await syncWishlistToServer(userId, localList);
   } else {
-    store.dispatch(actions.hydrateCart([]));
+    store.dispatch(actions.setWishlist([]));
   }
 }
 
 /**
- * Carga el carrito desde Supabase al iniciar sesión y lo guarda al cambiar.
- * El estado local previo (localStorage) se fusiona si el servidor aún no tiene filas.
+ * Carga la wishlist desde Supabase al iniciar sesión y la guarda al cambiar
+ * (mismo patrón que CartSync). localStorage se sube al servidor si aún no hay datos.
  */
-export const CartSync: React.FC = () => {
+export const WishlistSync: React.FC = () => {
   const dispatch = useDispatch();
-  const cartList = useSelector((s: RootState) => s.cartSlice.list);
+  const wishlist = useSelector((s: RootState) => s.wishlistSlice.list);
   const skipFirstSync = useRef(true);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export const CartSync: React.FC = () => {
         data: {session},
       } = await client.auth.getSession();
       if (session?.user) {
-        await reconcileCartWithServer(session.user.id);
+        await reconcileWishlistWithServer(session.user.id);
       }
     };
     void init();
@@ -49,9 +51,9 @@ export const CartSync: React.FC = () => {
       data: {subscription},
     } = client.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        await reconcileCartWithServer(session.user.id);
+        await reconcileWishlistWithServer(session.user.id);
       } else if (event === 'SIGNED_OUT') {
-        dispatch(resetCart());
+        dispatch(actions.resetWishlist());
       }
     });
 
@@ -75,11 +77,11 @@ export const CartSync: React.FC = () => {
         if (!session?.user) {
           return;
         }
-        await syncCartToServer(session.user.id, cartList);
+        await syncWishlistToServer(session.user.id, wishlist);
       })();
     }, 650);
     return () => clearTimeout(t);
-  }, [cartList]);
+  }, [wishlist]);
 
   return null;
 };

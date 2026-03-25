@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {useSelector} from 'react-redux';
 
 import {hooks} from '../hooks';
@@ -6,9 +6,9 @@ import {svg} from '../assets/svg';
 import {RootState} from '../store';
 import {ProductType} from '../types';
 import {components} from '../components';
-import {actions} from '../store/actions';
 import {removeFromCart} from '../store/slices/cartSlice';
 import {APP_PALETTE} from '../theme/appPalette';
+import {dispatchAddToCartWithFly} from '../utils/addToCartWithFly';
 
 type Props = {
   isLast: boolean;
@@ -18,6 +18,7 @@ type Props = {
 export const OrderItem: React.FC<Props> = ({product, isLast}) => {
   const navigate = hooks.useNavigate();
   const dispatch = hooks.useDispatch();
+  const productImgRef = useRef<HTMLImageElement>(null);
 
   const cart = useSelector((state: RootState) => state.cartSlice);
   const ifInCart = cart.list.find((item) => item.id === product.id);
@@ -45,6 +46,7 @@ export const OrderItem: React.FC<Props> = ({product, isLast}) => {
         }}
       >
         <img
+          ref={productImgRef}
           src={product.image}
           alt={product.name}
           style={{
@@ -99,7 +101,7 @@ export const OrderItem: React.FC<Props> = ({product, isLast}) => {
           <button
             onClick={(event) => {
               event.stopPropagation();
-              dispatch(actions.addToCart(product));
+              dispatchAddToCartWithFly(dispatch, product, productImgRef.current);
             }}
           >
             <svg.OrderPlusSvg />

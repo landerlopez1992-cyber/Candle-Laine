@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {useSelector} from 'react-redux';
 
 import {hooks} from '../hooks';
@@ -6,9 +6,9 @@ import {svg} from '../assets/svg';
 import {RootState} from '../store';
 import {ProductType} from '../types';
 import {components} from '../components';
-import {addToCart} from '../store/slices/cartSlice';
 import {addToWishlist} from '../store/slices/wishlistSlice';
 import {removeFromWishlist} from '../store/slices/wishlistSlice';
+import {dispatchAddToCartWithFly} from '../utils/addToCartWithFly';
 
 type Props = {
   isLast: boolean;
@@ -18,6 +18,7 @@ type Props = {
 export const ShopItem: React.FC<Props> = ({product, isLast}) => {
   const dispatch = hooks.useDispatch();
   const navigate = hooks.useNavigate();
+  const productImgRef = useRef<HTMLImageElement>(null);
 
   const wishlist = useSelector((state: RootState) => state.wishlistSlice);
 
@@ -36,7 +37,7 @@ export const ShopItem: React.FC<Props> = ({product, isLast}) => {
 
   const cartHandler = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.stopPropagation();
-    dispatch(addToCart(product));
+    dispatchAddToCartWithFly(dispatch, product, productImgRef.current);
   };
 
   return (
@@ -51,6 +52,7 @@ export const ShopItem: React.FC<Props> = ({product, isLast}) => {
         onClick={() => navigate(`/product/${product.id}`, {state: {product}})}
       >
         <img
+          ref={productImgRef}
           src={product.image}
           alt={product.name}
           style={{
@@ -107,7 +109,7 @@ export const ShopItem: React.FC<Props> = ({product, isLast}) => {
       <div>
         <h6
           className='number-of-lines-1'
-          style={{marginBottom: 4}}
+          style={{marginBottom: 4, color: 'var(--main-color)'}}
         >
           {product.name}
         </h6>

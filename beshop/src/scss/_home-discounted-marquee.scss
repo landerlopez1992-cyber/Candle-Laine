@@ -1,0 +1,32 @@
+/* Discounted: desplazamiento continuo inverso a Trending (izquierda → derecha) */
+.home-discounted-marquee {
+  overflow: hidden;
+  width: 100%;
+  padding-left: 20px;
+}
+
+.home-discounted-marquee__track {
+  display: flex;
+  gap: 14px;
+  width: max-content;
+  animation: home-discounted-marquee-scroll 75s linear infinite;
+
+  &:hover {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes home-discounted-marquee-scroll {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-discounted-marquee__track {
+    animation: none;
+  }
+}

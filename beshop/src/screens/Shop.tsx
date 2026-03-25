@@ -1,11 +1,8 @@
-import {useSelector} from 'react-redux';
 import React, {useState, useEffect} from 'react';
 
 import {items} from '../items';
 import {hooks} from '../hooks';
-import {utils} from '../utils';
 import {svg} from '../assets/svg';
-import {RootState} from '../store';
 import {ProductType} from '../types';
 import {components} from '../components';
 import {actions} from '../store/actions';
@@ -23,11 +20,14 @@ const sortingBy = [
 export const Shop: React.FC = () => {
   const location = hooks.useLocation();
 
-  const category = location.state?.category;
-  const categoryId = location.state?.categoryId as string | undefined;
+  const navState = location.state as
+    | {category?: string; categoryId?: string; discountOnly?: boolean}
+    | undefined;
+  const category = navState?.category;
+  const categoryId = navState?.categoryId;
+  const discountOnly = navState?.discountOnly === true;
   const {productsLoading, products} = useProducts(categoryId);
 
-  const navigate = hooks.useNavigate();
   const dispatch = hooks.useDispatch();
 
   const [showModal, setShowModal] = useState(false);
@@ -40,19 +40,7 @@ export const Shop: React.FC = () => {
     dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
-  const {selectedColors, selectedCategories, selectedTags} = useSelector(
-    (state: RootState) => state.filterSlice,
-  );
-
-  const filteredProducts = products.filter((product: ProductType) => {
-    return (
-      utils.colorMatch(product, selectedColors) &&
-      utils.tagMatch(product, selectedTags) &&
-      utils.statusMatch(product, selectedCategories)
-    );
-  });
-
-  const sortedProducts = [...filteredProducts].sort(
+  const sortedProducts = [...products].sort(
     (a: ProductType, b: ProductType) => {
       switch (sort) {
         case 'Price: low to high':
@@ -76,7 +64,11 @@ export const Shop: React.FC = () => {
       <components.Header
         showGoBack={true}
         showBasket={true}
-        title={category || 'Shop'}
+        title={
+          discountOnly
+            ? 'Discounted Items'
+            : category || 'Shop'
+        }
         headerStyle={{
           backgroundColor: APP_PALETTE.headerBand,
         }}
@@ -85,18 +77,30 @@ export const Shop: React.FC = () => {
   };
 
   const renderSettings = (): JSX.Element => {
+    const iconBtn: React.CSSProperties = {
+      padding: 8,
+      borderRadius: 8,
+      color: 'var(--main-color)',
+      backgroundColor: 'transparent',
+      border: `1px solid ${APP_PALETTE.border}`,
+    };
     return (
       <div
-        className='container row-center-space-between'
+        className='container'
         style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
           paddingTop: 18,
           paddingBottom: 16,
+          borderBottom: `1px solid ${APP_PALETTE.border}`,
         }}
       >
-        <button onClick={() => navigate('/filter')}>
-          <svg.FiltersSvg />
-        </button>
-        <button onClick={() => setShowModal(true)}>
+        <button
+          type='button'
+          style={iconBtn}
+          onClick={() => setShowModal(true)}
+          aria-label='Sorting'
+        >
           <svg.SortingBySvg />
         </button>
       </div>
@@ -114,7 +118,12 @@ export const Shop: React.FC = () => {
             height: '100%',
           }}
         >
-          <h6 className='t18'>No products found</h6>
+          <h6
+            className='t18'
+            style={{color: 'var(--main-color)'}}
+          >
+            No products found
+          </h6>
         </div>
       );
     }
@@ -153,7 +162,7 @@ export const Shop: React.FC = () => {
       <main
         className='scrollable'
         style={{
-          backgroundColor: 'var(--white-color)',
+          backgroundColor: 'var(--main-background)',
         }}
       >
         {renderSettings()}
@@ -170,7 +179,7 @@ export const Shop: React.FC = () => {
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundColor: 'rgba(30, 37, 56, 0.6)',
+          backgroundColor: 'rgba(28, 45, 24, 0.78)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -181,21 +190,25 @@ export const Shop: React.FC = () => {
           style={{
             width: 'calc(100% - 80px)',
             paddingLeft: 20,
-
-            backgroundColor: 'var(--white-color)',
+            paddingRight: 20,
+            paddingBottom: 8,
+            borderRadius: 12,
+            backgroundColor: APP_PALETTE.cartCardSurface,
+            border: `1px solid ${APP_PALETTE.border}`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {sortingBy.map((item, index) => {
             return (
               <button
+                type='button'
                 key={item.id}
                 style={{
                   width: '100%',
                   paddingBottom: 15,
                   paddingTop: index === 0 ? 20 : 15,
-                  paddingRight: 20,
                   borderBottom: '1px solid var(--border-color)',
+                  color: 'var(--text-on-light)',
                 }}
                 className='row-center-space-between'
                 onClick={() => {
@@ -209,7 +222,7 @@ export const Shop: React.FC = () => {
                     width: 16,
                     height: 16,
                     borderRadius: 8,
-                    border: '1px solid var(--border-color)',
+                    border: `1px solid ${APP_PALETTE.border}`,
                   }}
                   className='center'
                 >
@@ -219,7 +232,7 @@ export const Shop: React.FC = () => {
                         width: 10,
                         height: 10,
                         borderRadius: 5,
-                        backgroundColor: 'var(--main-color)',
+                        backgroundColor: 'var(--accent-color)',
                       }}
                     />
                   )}

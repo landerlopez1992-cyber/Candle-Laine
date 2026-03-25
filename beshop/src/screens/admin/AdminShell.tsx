@@ -45,7 +45,7 @@ export const ADMIN_SECTIONS: {
     id: 'promotions',
     label: 'Promociones',
     description:
-      'Cupones, descuentos y campañas. Define reglas y fechas de vigencia.',
+      'Banners del inicio (carrusel), cupones y campañas. Imágenes en Storage.',
     icon: <svg.GiftSvg />,
   },
   {
@@ -198,7 +198,7 @@ export const AdminShell: React.FC<AdminShellProps> = ({
                 opacity: 0.65,
               }}
             >
-              BeShop
+              Candle Laine
             </span>
           </div>
           <nav

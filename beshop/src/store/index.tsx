@@ -21,6 +21,9 @@ import {wishlistSlice} from './slices/wishlistSlice';
 import {promocodeSlice} from './slices/promocodeSlice';
 import {firstLaunchSlice} from './slices/firstLaunchSlice';
 import {verificationSlice} from './slices/verificationSlice';
+import {readPersistedCartWishlist, persistCartWishlist} from '../utils/cartWishlistStorage';
+
+const persistedCartWishlist = readPersistedCartWishlist();
 
 export const store: EnhancedStore = configureStore({
   reducer: {
@@ -36,7 +39,28 @@ export const store: EnhancedStore = configureStore({
     firstLaunchSlice: firstLaunchSlice.reducer,
     verificationSlice: verificationSlice.reducer,
   },
+  ...(persistedCartWishlist
+    ? {
+        preloadedState: {
+          cartSlice: persistedCartWishlist.cartSlice,
+          wishlistSlice: persistedCartWishlist.wishlistSlice,
+        },
+      }
+    : {}),
 });
+
+if (typeof window !== 'undefined') {
+  let persistT: ReturnType<typeof setTimeout> | undefined;
+  store.subscribe(() => {
+    if (persistT) {
+      clearTimeout(persistT);
+    }
+    persistT = setTimeout(() => {
+      const s = store.getState();
+      persistCartWishlist(s.cartSlice, s.wishlistSlice);
+    }, 280);
+  });
+}
 
 export interface RootState {
   bgSlice: BGState;

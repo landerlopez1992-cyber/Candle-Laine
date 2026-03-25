@@ -43,14 +43,17 @@ export const Categories: React.FC = () => {
       <main
         className='scrollable container'
         style={{
-          paddingTop: 15,
-          paddingBottom: 20,
-          backgroundColor: 'var(--white-color)',
+          paddingTop: 18,
+          paddingBottom: 24,
+          paddingLeft: 16,
+          paddingRight: 16,
+          backgroundColor: APP_PALETTE.appShell,
+          boxSizing: 'border-box',
         }}
       >
         <div
           style={{
-            gap: 15,
+            gap: 12,
             display: 'grid',
             gridTemplateColumns: 'repeat(2, 1fr)',
           }}
@@ -59,12 +62,21 @@ export const Categories: React.FC = () => {
             return (
               <button
                 key={index}
+                type='button'
                 style={{
                   width: '100%',
                   position: 'relative',
-                  height: 200,
+                  minHeight: 152,
+                  borderRadius: 10,
+                  overflow: 'hidden',
+                  border: `1px solid ${APP_PALETTE.border}`,
                   display: 'flex',
-                  justifyContent: 'center',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  padding: '12px 10px 0',
+                  boxSizing: 'border-box',
+                  backgroundColor: 'var(--white-color)',
                 }}
                 onClick={() => {
                   navigate('/shop', {
@@ -80,22 +92,25 @@ export const Categories: React.FC = () => {
                   alt={category.name}
                   style={{
                     width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
+                    height: 108,
+                    objectFit: 'contain',
+                    flexShrink: 0,
                   }}
                 />
                 <div
                   style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    padding: '5px 10px',
+                    width: '100%',
+                    marginTop: 'auto',
+                    padding: '8px 8px 10px',
                     backgroundColor: 'var(--white-color)',
                   }}
                 >
                   <h5
                     style={{
-                      color: 'var(--main-color)',
+                      color: 'var(--text-on-light)',
                       textTransform: 'capitalize',
+                      margin: 0,
+                      fontSize: 15,
                     }}
                   >
                     {category.name}

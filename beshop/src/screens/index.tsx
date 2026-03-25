@@ -1,8 +1,8 @@
 import {FAQ} from './FAQ';
+import {TermsAndConditions} from './TermsAndConditions';
 import {Shop} from './Shop';
 import {SignIn} from './SignIn';
 import {SignUp} from './SignUp';
-import {Filter} from './Filter';
 import {Reviews} from './Reviews';
 import {Product} from './Product';
 import {Checkout} from './Checkout';
@@ -40,9 +40,9 @@ import {PhoneNumberHasBeenVerified} from './PhoneNumberHasBeenVerified';
 
 export const screens = {
   FAQ,
+  TermsAndConditions,
   Shop,
   SignIn,
-  Filter,
   SignUp,
   Reviews,
   Product,

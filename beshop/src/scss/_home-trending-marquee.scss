@@ -1,0 +1,32 @@
+/* Trending: desplazamiento continuo lento (derecha → izquierda) */
+.home-trending-marquee {
+  overflow: hidden;
+  width: 100%;
+  padding-left: 20px;
+}
+
+.home-trending-marquee__track {
+  display: flex;
+  gap: 14px;
+  width: max-content;
+  animation: home-trending-marquee-scroll 75s linear infinite;
+
+  &:hover {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes home-trending-marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-trending-marquee__track {
+    animation: none;
+  }
+}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {useSelector} from 'react-redux';
 
 import {hooks} from '../hooks';
@@ -6,19 +6,36 @@ import {svg} from '../assets/svg';
 import {RootState} from '../store';
 import {ProductType} from '../types';
 import {components} from '../components';
-import {addToCart} from '../store/slices/cartSlice';
 import {addToWishlist} from '../store/slices/wishlistSlice';
 import {removeFromWishlist} from '../store/slices/wishlistSlice';
+import {dispatchAddToCartWithFly} from '../utils/addToCartWithFly';
 
 type Props = {
   index: number;
   isLast: boolean;
   product: ProductType;
+  /** Carrusel infinito: sin márgenes de borde (el contenedor alinea el padding). */
+  omitEdgeMargins?: boolean;
+  /** Iconos corazón / bolsa ligeramente más pequeños (p. ej. carrusel Discounted). */
+  compactIcons?: boolean;
 };
 
-export const TrendingItem: React.FC<Props> = ({product, index, isLast}) => {
+const iconCompactStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  transform: 'scale(0.88)',
+  transformOrigin: 'center',
+};
+
+export const TrendingItem: React.FC<Props> = ({
+  product,
+  index,
+  isLast,
+  omitEdgeMargins = false,
+  compactIcons = false,
+}) => {
   const dispatch = hooks.useDispatch();
   const navigate = hooks.useNavigate();
+  const productImgRef = useRef<HTMLImageElement>(null);
 
   const wishlist = useSelector((state: RootState) => state.wishlistSlice);
 
@@ -28,7 +45,7 @@ export const TrendingItem: React.FC<Props> = ({product, index, isLast}) => {
     event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => {
     event.stopPropagation();
-    dispatch(addToCart(product));
+    dispatchAddToCartWithFly(dispatch, product, productImgRef.current);
   };
 
   const wishlistHandler = (
@@ -47,8 +64,8 @@ export const TrendingItem: React.FC<Props> = ({product, index, isLast}) => {
     <div
       style={{
         width: 138,
-        marginLeft: index === 0 ? 20 : 0,
-        marginRight: isLast ? 20 : 0,
+        marginLeft: omitEdgeMargins ? 0 : index === 0 ? 20 : 0,
+        marginRight: omitEdgeMargins ? 0 : isLast ? 20 : 0,
         cursor: 'pointer',
       }}
       onClick={() => navigate(`/product/${product.id}`, {state: {product}})}
@@ -62,6 +79,7 @@ export const TrendingItem: React.FC<Props> = ({product, index, isLast}) => {
         }}
       >
         <img
+          ref={productImgRef}
           src={product.image}
           alt={product.name}
           style={{
@@ -89,26 +107,32 @@ export const TrendingItem: React.FC<Props> = ({product, index, isLast}) => {
         />
         {/* Buttons */}
         <button
+          type='button'
           style={{
             position: 'absolute',
             bottom: 40 - 8,
             right: 4,
-            padding: 8,
+            padding: compactIcons ? 5 : 8,
           }}
           onClick={wishlistHandler}
         >
-          <svg.HeartSvg product={product} />
+          <span style={compactIcons ? iconCompactStyle : undefined}>
+            <svg.HeartSvg product={product} />
+          </span>
         </button>
         <button
+          type='button'
           style={{
             position: 'absolute',
             bottom: 4,
             right: 4,
-            padding: 8,
+            padding: compactIcons ? 5 : 8,
           }}
           onClick={cartHandler}
         >
-          <svg.BagSvg />
+          <span style={compactIcons ? iconCompactStyle : undefined}>
+            <svg.BagSvg />
+          </span>
         </button>
       </div>
       {/* Description */}

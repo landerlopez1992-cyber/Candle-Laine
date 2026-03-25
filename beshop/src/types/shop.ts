@@ -80,3 +80,23 @@ export type ShopPaymentSettingsRow = {
   stripe_livemode?: boolean;
   updated_at: string;
 };
+
+/** Fila singleton `shop_home_story` (id = 'default'). */
+export type ShopHomeStoryRow = {
+  id: string;
+  title: string;
+  body_text: string;
+  image_paths: string[];
+  updated_at: string;
+};
+
+/** Fila singleton `shop_home_countdown` (id = 'default'). */
+export type ShopHomeCountdownRow = {
+  id: string;
+  enabled: boolean;
+  product_id: string | null;
+  ends_at: string | null;
+  body_text: string;
+  button_label: string;
+  updated_at: string;
+};

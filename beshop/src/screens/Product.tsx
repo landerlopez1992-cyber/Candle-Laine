@@ -12,8 +12,8 @@ import {RootState} from '../store';
 import {actions} from '../store/actions';
 import {components} from '../components';
 import {useProductReviews} from '../hooks/useProductReviews';
-import {addToCart} from '../store/slices/cartSlice';
 import {removeFromCart} from '../store/slices/cartSlice';
+import {dispatchAddToCartWithFly} from '../utils/addToCartWithFly';
 import {addToWishlist} from '../store/slices/wishlistSlice';
 import {removeFromWishlist} from '../store/slices/wishlistSlice';
 import {APP_PALETTE} from '../theme/appPalette';
@@ -44,6 +44,7 @@ export const Product: React.FC = () => {
   } = useProductReviews(productIdForReviews);
 
   const swiperRef = useRef<SwiperCore | null>(null);
+  const carouselActiveImgRef = useRef<HTMLImageElement>(null);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedColor, setSelectedColor] = useState('');
@@ -137,6 +138,7 @@ export const Product: React.FC = () => {
               return (
                 <SwiperSlide key={index}>
                   <img
+                    ref={activeSlide === index ? carouselActiveImgRef : undefined}
                     src={item}
                     alt={'product'}
                     style={{
@@ -223,11 +225,15 @@ export const Product: React.FC = () => {
   };
 
   const renderPriceWithCounter = (): JSX.Element => {
-    if (!product) {
+    if (!product || !updatedProduct) {
       return <></>;
     }
     const ifProductInCart = cart.list.find((item) => item.id === product.id);
     const qty = ifProductInCart ? ifProductInCart.quantity : 0;
+    const flyUrl =
+      product.images.length > 0
+        ? product.images[activeSlide] ?? product.images[0]
+        : product.image;
     return (
       <div
         className='container row-center-space-between'
@@ -254,7 +260,7 @@ export const Product: React.FC = () => {
         >
           <button
             onClick={() => {
-              dispatch(removeFromCart(product));
+              dispatch(removeFromCart(updatedProduct));
             }}
           >
             <svg.MinusSvg />
@@ -267,7 +273,12 @@ export const Product: React.FC = () => {
           </span>
           <button
             onClick={() => {
-              dispatch(addToCart(product));
+              dispatchAddToCartWithFly(
+                dispatch,
+                updatedProduct,
+                carouselActiveImgRef.current,
+                flyUrl,
+              );
             }}
           >
             <svg.PlusSvg />
@@ -354,9 +365,13 @@ export const Product: React.FC = () => {
   };
 
   const renderButton = (): JSX.Element => {
-    if (!updatedProduct) {
+    if (!updatedProduct || !product) {
       return <></>;
     }
+    const flyUrl =
+      product.images.length > 0
+        ? product.images[activeSlide] ?? product.images[0]
+        : product.image;
     return (
       <div
         className='container'
@@ -368,7 +383,12 @@ export const Product: React.FC = () => {
           text='+ Add to cart'
           containerStyle={{marginBottom: 16}}
           onClick={() => {
-            dispatch(addToCart(updatedProduct));
+            dispatchAddToCartWithFly(
+              dispatch,
+              updatedProduct,
+              carouselActiveImgRef.current,
+              flyUrl,
+            );
           }}
         />
       </div>

@@ -145,6 +145,8 @@ export const Header: React.FC<Props> = ({
 
     return (
       <button
+        type='button'
+        data-fly-cart-target='true'
         onClick={() => {
           dispatch(setScreen(Screens.Cart));
           navigate(Routes.TabNavigator);

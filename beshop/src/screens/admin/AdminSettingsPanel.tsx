@@ -9,8 +9,9 @@ import {
   startStripeConnectOAuth,
 } from '../../utils/stripeConnectAdmin';
 import {formatSupabaseError} from '../../utils/supabaseError';
+import {AdminMuralSettings} from './AdminMuralSettings';
 
-type SettingsTab = 'general' | 'payment' | 'stripe';
+type SettingsTab = 'general' | 'payment' | 'stripe' | 'mural';
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -275,6 +276,7 @@ export const AdminSettingsPanel: React.FC = () => {
             {id: 'general' as const, label: 'General'},
             {id: 'payment' as const, label: 'Métodos de pago'},
             {id: 'stripe' as const, label: 'Stripe'},
+            {id: 'mural' as const, label: 'Mural'},
           ] as const
         ).map((t) => {
           const active = tab === t.id;
@@ -758,6 +760,8 @@ export const AdminSettingsPanel: React.FC = () => {
           )}
         </div>
       )}
+
+      {tab === 'mural' && <AdminMuralSettings />}
     </div>
   );
 };

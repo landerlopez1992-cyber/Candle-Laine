@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {useSelector} from 'react-redux';
 
 import {hooks} from '../hooks';
@@ -7,6 +7,8 @@ import {RootState} from '../store';
 import {ProductType} from '../types';
 import {components} from '../components';
 import {actions} from '../store/actions';
+import {APP_PALETTE} from '../theme/appPalette';
+import {dispatchAddToCartWithFly} from '../utils/addToCartWithFly';
 
 type Props = {
   isLast: boolean;
@@ -16,6 +18,7 @@ type Props = {
 export const WishlistItem: React.FC<Props> = ({product, isLast}) => {
   const dispatch = hooks.useDispatch();
   const navigate = hooks.useNavigate();
+  const productImgRef = useRef<HTMLImageElement>(null);
 
   const wishlist = useSelector((state: RootState) => state.wishlistSlice);
 
@@ -25,7 +28,7 @@ export const WishlistItem: React.FC<Props> = ({product, isLast}) => {
     event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => {
     event.stopPropagation();
-    dispatch(actions.addToCart(product));
+    dispatchAddToCartWithFly(dispatch, product, productImgRef.current);
   };
 
   const wishlistHandler = (
@@ -45,9 +48,10 @@ export const WishlistItem: React.FC<Props> = ({product, isLast}) => {
         padding: 10,
         display: 'flex',
         position: 'relative',
-        border: '1px solid #E5E5E5',
-        marginBottom: isLast ? 0 : 8,
-        backgroundColor: 'var(--white-color)',
+        border: `1px solid ${APP_PALETTE.border}`,
+        borderRadius: 10,
+        marginBottom: isLast ? 0 : 10,
+        backgroundColor: 'var(--list-row-bg)',
       }}
       className='clickable'
       onClick={() => navigate(`/product/${product.id}`, {state: {product}})}
@@ -62,6 +66,7 @@ export const WishlistItem: React.FC<Props> = ({product, isLast}) => {
         }}
       >
         <img
+          ref={productImgRef}
           src={product.image}
           alt={product.name}
           style={{
@@ -81,7 +86,11 @@ export const WishlistItem: React.FC<Props> = ({product, isLast}) => {
         }}
       >
         <h6
-          style={{marginBottom: 5, marginTop: 2}}
+          style={{
+            marginBottom: 5,
+            marginTop: 2,
+            color: 'var(--main-color)',
+          }}
           className='number-of-lines-1'
         >
           {product.name}
