@@ -1,0 +1,56 @@
+# Despliega la PWA (beshop/build) a la rama gh-pages.
+#
+# IMPORTANTE: en el repo → Settings → Pages → Build and deployment:
+#   Source: Deploy from a branch
+#   Branch: gh-pages  /  folder: / (root)
+# NO uses "main" como carpeta de Pages: ahí solo está el README.
+#
+# Opcional: Secrets → Actions → REACT_APP_SUPABASE_URL y REACT_APP_SUPABASE_ANON_KEY
+
+name: Deploy React app to gh-pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: beshop/package-lock.json
+
+      - name: Install and build (beshop/)
+        working-directory: beshop
+        run: |
+          npm ci
+          CI=false npm run build
+        env:
+          REACT_APP_SUPABASE_URL: ${{ secrets.REACT_APP_SUPABASE_URL }}
+          REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}
+
+      - name: SPA deep links (404 → index)
+        run: cp beshop/build/index.html beshop/build/404.html
+
+      - name: Disable Jekyll (serve static files as-is)
+        run: touch beshop/build/.nojekyll
+
+      - name: Push build to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./beshop/build
+          force_orphan: true
