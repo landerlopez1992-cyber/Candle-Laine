@@ -27,6 +27,7 @@ export const Wishlist: React.FC = () => {
         title='Wishlist'
         showBasket={true}
         showLogo={true}
+        showBrandMenu={true}
         headerStyle={{
           backgroundColor: APP_PALETTE.headerBand,
         }}

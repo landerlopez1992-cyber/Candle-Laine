@@ -206,6 +206,7 @@ export const Home: React.FC = () => {
     return (
       <components.Header
         showLogo={true}
+        showBrandMenu={true}
         showBasket={true}
         headerStyle={{
           backgroundColor: APP_PALETTE.headerBand,

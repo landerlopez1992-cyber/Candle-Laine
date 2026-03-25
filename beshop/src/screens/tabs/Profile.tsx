@@ -114,6 +114,7 @@ export const Profile: React.FC = () => {
     return (
       <components.Header
         showLogo={true}
+        showBrandMenu={true}
         title='My Profile'
         showBasket={true}
         headerStyle={{

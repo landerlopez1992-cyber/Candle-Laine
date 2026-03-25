@@ -55,6 +55,7 @@ import {MapPinSvgAddress} from './MapPinSvgAddress';
 import {RememberCheckSvg} from './RememberCheckSvg';
 import {CheckPromocodeSvg} from './CheckPromocodeSvg';
 import {BestSellerHeartSvg} from './BestSellerHeartSvg';
+import {MoreVerticalSvg} from './MoreVerticalSvg';
 
 // Tab Icons
 import {HomeSvg} from './tabs/HomeSvg';
@@ -126,4 +127,5 @@ export const svg = {
   RememberCheckSvg,
   CheckPromocodeSvg,
   BestSellerHeartSvg,
+  MoreVerticalSvg,
 };

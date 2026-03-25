@@ -1,4 +1,5 @@
 import {FAQ} from './FAQ';
+import {BrandStory} from './BrandStory';
 import {TermsAndConditions} from './TermsAndConditions';
 import {Shop} from './Shop';
 import {SignIn} from './SignIn';
@@ -44,6 +45,7 @@ import {PhoneNumberHasBeenVerified} from './PhoneNumberHasBeenVerified';
 
 export const screens = {
   FAQ,
+  BrandStory,
   TermsAndConditions,
   Shop,
   SignIn,

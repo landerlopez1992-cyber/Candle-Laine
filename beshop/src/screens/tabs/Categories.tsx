@@ -28,6 +28,7 @@ export const Categories: React.FC = () => {
       <components.Header
         search={true}
         showLogo={true}
+        showBrandMenu={true}
         showBasket={true}
         headerStyle={{
           backgroundColor: APP_PALETTE.headerBand,

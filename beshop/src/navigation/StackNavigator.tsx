@@ -60,6 +60,10 @@ const stack = createBrowserRouter(
     element: <screens.TermsAndConditions />,
   },
   {
+    path: Routes.BrandStory,
+    element: <screens.BrandStory />,
+  },
+  {
     path: Routes.AdminCategoryDetail,
     element: <screens.AdminCategoryDetail />,
   },

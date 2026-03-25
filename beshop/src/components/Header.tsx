@@ -14,6 +14,8 @@ type Props = {
   title?: string;
   search?: boolean;
   showLogo?: boolean;
+  /** Menú (⋮) a la izquierda; navega a la historia de marca / contacto. */
+  showBrandMenu?: boolean;
   showGoBack?: boolean;
   showBasket?: boolean;
   headerStyle?: React.CSSProperties;
@@ -37,6 +39,7 @@ export const Header: React.FC<Props> = ({
   title,
   search,
   showLogo,
+  showBrandMenu,
   showGoBack,
   showBasket,
   headerStyle,
@@ -56,6 +59,38 @@ export const Header: React.FC<Props> = ({
   const cart = useSelector((state: RootState) => state.cartSlice);
   const cartTotals = getCartCheckoutTotals(cart);
 
+  const renderBrandMenu = (): JSX.Element | null => {
+    if (!showBrandMenu || !showLogo || showGoBack) {
+      return null;
+    }
+    return (
+      <button
+        type='button'
+        aria-label='Open story and contact'
+        onClick={() => navigate(Routes.BrandStory)}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 48,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+          margin: 0,
+          border: 'none',
+          background: 'transparent',
+          color: APP_PALETTE.headerTitleLight,
+          zIndex: 2,
+        }}
+        className='clickable'
+      >
+        <svg.MoreVerticalSvg />
+      </button>
+    );
+  };
+
   const renderLogo = (): JSX.Element | null => {
     if (!showLogo) return null;
 
@@ -64,7 +99,9 @@ export const Header: React.FC<Props> = ({
         style={{
           height: '100%',
           width: 'auto',
-          padding: '0 20px',
+          padding: showBrandMenu && !showGoBack ? '0 20px 0 8px' : '0 20px',
+          paddingLeft:
+            showBrandMenu && !showGoBack ? 52 : 20,
           display: 'flex',
           alignItems: 'center',
         }}
@@ -354,6 +391,7 @@ export const Header: React.FC<Props> = ({
         }}
         className='row-center-space-between'
       >
+        {renderBrandMenu()}
         {renderLogo()}
         {renderGoBack()}
         {renderTitle()}

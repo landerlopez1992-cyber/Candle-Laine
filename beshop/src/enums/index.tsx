@@ -42,6 +42,8 @@ export enum Routes {
   TrackYourOrder = '/track-your-order',
   FAQ = '/faq',
   TermsAndConditions = '/terms-and-conditions',
+  /** Historia de marca + contacto (panel tipo menú lateral). */
+  BrandStory = '/brand-story',
   MyAddress = '/my-address',
   CheckoutPaymentMethod = '/checkout-payment-method',
   CheckoutInstallmentsPick = '/checkout-installments-pick',
