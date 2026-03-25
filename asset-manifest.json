@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/Candle-Laine/static/css/main.b36e1e57.css",
+    "main.js": "/Candle-Laine/static/js/main.6caef1fc.js",
+    "static/js/504.657a6df8.chunk.js": "/Candle-Laine/static/js/504.657a6df8.chunk.js",
+    "static/media/07.png": "/Candle-Laine/static/media/07.7c0aba6dc86b37e4f8e5.png",
+    "index.html": "/Candle-Laine/index.html",
+    "main.b36e1e57.css.map": "/Candle-Laine/static/css/main.b36e1e57.css.map",
+    "main.6caef1fc.js.map": "/Candle-Laine/static/js/main.6caef1fc.js.map",
+    "504.657a6df8.chunk.js.map": "/Candle-Laine/static/js/504.657a6df8.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b36e1e57.css",
+    "static/js/main.6caef1fc.js"
+  ]
+}
