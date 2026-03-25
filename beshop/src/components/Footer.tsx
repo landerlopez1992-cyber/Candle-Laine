@@ -46,8 +46,8 @@ export const Footer: React.FC = () => {
       style={{
         zIndex: 100,
         height: 'var(--footer-height)',
-        borderTop: '1px solid #EEEEEE',
-        backgroundColor: 'var(--white-color)',
+        borderTop: '1px solid var(--border-color)',
+        backgroundColor: 'var(--footer-bar)',
       }}
     >
       <ul

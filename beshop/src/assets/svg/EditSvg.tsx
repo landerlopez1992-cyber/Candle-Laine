@@ -9,7 +9,7 @@ export const EditSvg: React.FC = () => {
       fill='none'
     >
       <path
-        stroke='#666'
+        stroke='var(--main-color)'
         strokeLinecap='round'
         strokeLinejoin='round'
         strokeWidth={1.5}

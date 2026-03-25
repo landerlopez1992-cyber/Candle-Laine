@@ -4,7 +4,7 @@ type Props = {
   color?: string;
 };
 
-export const LineSvg: React.FC<Props> = ({color = '#D05278'}) => {
+export const LineSvg: React.FC<Props> = ({color = 'var(--accent-color)'}) => {
   return (
     <svg
       xmlns='http://www.w3.org/2000/svg'

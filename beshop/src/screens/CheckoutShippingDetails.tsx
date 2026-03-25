@@ -3,6 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {hooks} from '../hooks';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import { APP_PALETTE } from '../theme/appPalette';
 
 const addressess = [
   {
@@ -29,11 +30,11 @@ export const CheckoutShippingDetails: React.FC = () => {
     addressess[0].id,
   );
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -41,7 +42,7 @@ export const CheckoutShippingDetails: React.FC = () => {
       <components.Header
         title='Shipping details'
         headerStyle={{
-          backgroundColor: '#FCEDEA',
+          backgroundColor: APP_PALETTE.headerBand,
         }}
         showGoBack={true}
       />
@@ -54,7 +55,10 @@ export const CheckoutShippingDetails: React.FC = () => {
         className='scrollable'
         style={{
           padding: 20,
-          backgroundColor: 'var(--white-color)',
+          paddingBottom: 28,
+          backgroundColor: APP_PALETTE.appShell,
+          minHeight: 'calc(100vh - 120px)',
+          boxSizing: 'border-box',
         }}
       >
         {addressess.map((address, index, array) => {
@@ -63,11 +67,15 @@ export const CheckoutShippingDetails: React.FC = () => {
           return (
             <button
               key={address.id}
+              type='button'
               style={{
                 padding: '10px 20px',
                 width: '100%',
                 marginBottom: isLast ? 0 : 8,
                 border: '1px solid var(--border-color)',
+                backgroundColor: APP_PALETTE.cartCardSurface,
+                cursor: 'pointer',
+                textAlign: 'left',
               }}
               className='row-center-space-between'
               onClick={() => setSelectedAddress(address.id)}
@@ -82,14 +90,16 @@ export const CheckoutShippingDetails: React.FC = () => {
                 <span
                   style={{
                     fontFamily: 'Tenor Sans',
-                    color: 'var(--main-color)',
+                    color: 'var(--text-on-light)',
                     lineHeight: 1.2,
                     fontSize: 16,
                   }}
                 >
                   {address.name}
                 </span>
-                <span className='t14'>{address.address}</span>
+                <span className='t14' style={{color: 'var(--text-on-light)'}}>
+                  {address.address}
+                </span>
               </div>
               <div
                 style={{
@@ -97,7 +107,9 @@ export const CheckoutShippingDetails: React.FC = () => {
                   height: 20,
                   borderRadius: 10,
                   border: `2px solid ${
-                    selectedAddress === address.id ? '#D05278' : '#999999'
+                    selectedAddress === address.id
+                      ? APP_PALETTE.accent
+                      : '#999999'
                   }`,
                 }}
                 className='center'
@@ -108,7 +120,7 @@ export const CheckoutShippingDetails: React.FC = () => {
                       width: 10,
                       height: 10,
                       borderRadius: 5,
-                      backgroundColor: '#D05278',
+                      backgroundColor: APP_PALETTE.accent,
                     }}
                   />
                 )}

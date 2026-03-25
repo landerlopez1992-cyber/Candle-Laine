@@ -6,6 +6,7 @@ import {svg} from '../assets/svg';
 import {RootState} from '../store';
 import {Screens, Routes} from '../enums';
 import {setScreen} from '../store/slices/tabSlice';
+import {APP_PALETTE} from '../theme/appPalette';
 
 type Props = {
   title?: string;
@@ -15,6 +16,20 @@ type Props = {
   showBasket?: boolean;
   headerStyle?: React.CSSProperties;
 };
+
+function isLightHeaderBackground(bg: unknown): boolean {
+  if (bg == null || typeof bg !== 'string') {
+    return false;
+  }
+  const s = bg.toLowerCase().trim();
+  return (
+    s === '#fff' ||
+    s === '#ffffff' ||
+    s === 'white' ||
+    s === 'rgb(255, 255, 255)' ||
+    s === 'var(--white-color)'
+  );
+}
 
 export const Header: React.FC<Props> = ({
   title,
@@ -33,7 +48,7 @@ export const Header: React.FC<Props> = ({
   );
 
   const [showModal, setShowModal] = useState(false);
-  const [themeColor, setThemeColor] = useState('#fff');
+  const [themeColor, setThemeColor] = useState(APP_PALETTE.appShell);
 
   hooks.useThemeColor(themeColor);
 
@@ -53,7 +68,7 @@ export const Header: React.FC<Props> = ({
         }}
         className='clickable'
         onClick={() => {
-          setThemeColor('#F5FAFB');
+          setThemeColor(APP_PALETTE.appShell);
           setShowModal(true);
         }}
       >
@@ -84,6 +99,14 @@ export const Header: React.FC<Props> = ({
     return null;
   };
 
+  const headerBackground =
+    headerStyle?.backgroundColor !== undefined
+      ? headerStyle.backgroundColor
+      : 'var(--main-background)';
+  const titleColor = isLightHeaderBackground(headerBackground)
+    ? 'var(--main-color)'
+    : APP_PALETTE.headerTitleLight;
+
   const renderTitle = (): JSX.Element | null => {
     return (
       <div
@@ -93,7 +116,7 @@ export const Header: React.FC<Props> = ({
           transform: 'translateX(-50%)',
         }}
       >
-        <h4 style={{marginBottom: 2}}>{title}</h4>
+        <h4 style={{marginBottom: 2, color: titleColor}}>{title}</h4>
       </div>
     );
   };
@@ -153,7 +176,7 @@ export const Header: React.FC<Props> = ({
         >
           <span
             style={{
-              color: 'var(--white-color)',
+              color: '#fff',
               fontFamily: 'Lato',
               fontWeight: 700,
               marginBottom: 1,
@@ -184,11 +207,11 @@ export const Header: React.FC<Props> = ({
           }}
           onClick={() => {
             if (currentScreen === 'Wishlist') {
-              setThemeColor('#F5FAFB');
+              setThemeColor(APP_PALETTE.appShell);
             }
 
             if (currentScreen === 'Home') {
-              setThemeColor('#F5FAFB');
+              setThemeColor(APP_PALETTE.appShell);
             }
 
             setShowModal(false);

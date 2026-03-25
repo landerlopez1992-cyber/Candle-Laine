@@ -3,7 +3,7 @@ import type {PayloadAction} from '@reduxjs/toolkit';
 
 import type {PromocodeType} from '../../types';
 
-type PromocodelistState = {list: PromocodeType[]};
+export type PromocodelistState = {list: PromocodeType[]};
 
 const initialState: PromocodelistState = {
   list: [],

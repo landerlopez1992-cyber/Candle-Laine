@@ -8,6 +8,7 @@ import {components} from '../../components';
 import {actions} from '../../store/actions';
 import {useBanners} from '../../hooks/useBanners';
 import {useProducts} from '../../hooks/useProducts';
+import {APP_PALETTE} from '../../theme/appPalette';
 
 export const Home: React.FC = () => {
   const dispatch = hooks.useDispatch();
@@ -21,11 +22,11 @@ export const Home: React.FC = () => {
   const banner_1 = banners[0] as any;
   const banner_2 = banners[1] as any;
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -34,7 +35,7 @@ export const Home: React.FC = () => {
         showLogo={true}
         showBasket={true}
         headerStyle={{
-          backgroundColor: '#FCEDEA',
+          backgroundColor: APP_PALETTE.headerBand,
         }}
       />
     );
@@ -161,13 +162,19 @@ export const Home: React.FC = () => {
   };
 
   const renderContent = (): JSX.Element => {
-    if (isLoading) return <components.Loader />;
+    if (isLoading) {
+      return (
+        <components.Loader
+          spinnerColor={APP_PALETTE.spinner}
+        />
+      );
+    }
 
     return (
       <main
         className='scrollable'
         style={{
-          backgroundColor: 'var(--white-color)',
+          backgroundColor: 'var(--main-background)',
         }}
       >
         {renderBanner_1()}

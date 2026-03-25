@@ -34,11 +34,11 @@ export const Button: React.FC<Props> = ({
   const style: CSSProperties = {
     height: 60,
     backgroundColor:
-      colorScheme === 'primary' ? 'var(--main-color)' : '#FAF9FF',
+      colorScheme === 'primary' ? 'var(--accent-color)' : 'transparent',
     color:
-      colorScheme === 'primary' ? 'var(--white-color)' : 'var(--main-color)',
+      colorScheme === 'primary' ? '#1c2d18' : 'var(--main-color)',
     fontFamily: 'Lato',
-    fontWeight: 400,
+    fontWeight: 600,
     fontSize: 14,
     lineHeight: 1.7,
     cursor: 'pointer',
@@ -51,7 +51,7 @@ export const Button: React.FC<Props> = ({
     justifyContent: 'center',
     alignItems: 'center',
     border: `1px solid ${
-      colorScheme === 'primary' ? 'var(--main-color)' : '#EEEEEE'
+      colorScheme === 'primary' ? 'var(--accent-color)' : 'var(--border-color)'
     }`,
     ...containerStyle,
   };

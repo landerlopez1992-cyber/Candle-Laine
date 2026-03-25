@@ -1,7 +1,13 @@
 import React from 'react';
 import PuffLoader from 'react-spinners/PuffLoader';
 
-export const Loader: React.FC = () => {
+import {APP_PALETTE} from '../theme/appPalette';
+
+type Props = {
+  spinnerColor?: string;
+};
+
+export const Loader: React.FC<Props> = ({spinnerColor = APP_PALETTE.spinner}) => {
   return (
     <div
       style={{
@@ -15,7 +21,7 @@ export const Loader: React.FC = () => {
     >
       <PuffLoader
         size={40}
-        color={'#455A81'}
+        color={spinnerColor}
         aria-label='Loading Spinner'
         data-testid='loader'
         speedMultiplier={1}

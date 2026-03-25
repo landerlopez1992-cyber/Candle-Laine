@@ -8,6 +8,7 @@ import {RootState} from '../../store';
 import {CategoryType} from '../../types';
 import {actions} from '../../store/actions';
 import {components} from '../../components';
+import { APP_PALETTE } from '../../theme/appPalette';
 
 export const Categories: React.FC = () => {
   const navigate = hooks.useNavigate();
@@ -15,11 +16,11 @@ export const Categories: React.FC = () => {
 
   const {categoriesLoading, categories} = hooks.useCategories();
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -29,7 +30,7 @@ export const Categories: React.FC = () => {
         showLogo={true}
         showBasket={true}
         headerStyle={{
-          backgroundColor: '#FCEDEA',
+          backgroundColor: APP_PALETTE.headerBand,
         }}
       />
     );
@@ -66,7 +67,12 @@ export const Categories: React.FC = () => {
                   justifyContent: 'center',
                 }}
                 onClick={() => {
-                  navigate('/shop');
+                  navigate('/shop', {
+                    state: {
+                      category: category.name,
+                      categoryId: category.id,
+                    },
+                  });
                 }}
               >
                 <img

@@ -1,44 +1,86 @@
 import React, {useEffect, useState} from 'react';
 
+import {svg} from '../assets/svg';
+import {CHECKOUT_CREDIT_CARDS} from '../constants/checkoutPayment';
+import {Routes} from '../enums';
 import {hooks} from '../hooks';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import {supabase} from '../supabaseClient';
+import {APP_PALETTE} from '../theme/appPalette';
+import type {
+  CheckoutPaymentDetailState,
+  ShopPaymentSettingsRow,
+} from '../types/shop';
 
-const creditCards = [
-  {
-    id: '1',
-    name: 'Visa',
-    number: '7741 ******** 6644',
-  },
-  {
-    id: '2',
-    name: 'Mastercard',
-    number: '7674 ******** 1884',
-  },
-];
+const checkoutCardStyle: React.CSSProperties = {
+  backgroundColor: APP_PALETTE.cartCardSurface,
+};
 
 export const CheckoutPaymentMethod: React.FC = () => {
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
   const dispatch = hooks.useDispatch();
+  const navigate = hooks.useNavigate();
 
-  const [selectedCash, setSelectedCash] = useState<boolean>(false);
-  const [selectedPayPal, setSelectedPayPal] = useState<boolean>(false);
-  const [selectedApplePay, setSelectedApplePay] = useState<boolean>(false);
-  const [selectedCard, setSelectedCard] = useState<string | null>(
-    creditCards[1].id,
-  );
+  const [paymentSettings, setPaymentSettings] =
+    useState<ShopPaymentSettingsRow | null>(null);
+  const [settingsReady, setSettingsReady] = useState(false);
+
+  const zelleEnabled =
+    settingsReady && Boolean(supabase) && paymentSettings?.zelle_enabled === true;
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!supabase) {
+      setSettingsReady(true);
+      return;
+    }
+    let cancelled = false;
+    void supabase
+      .from('shop_payment_settings')
+      .select('id, zelle_enabled, zelle_phone, zelle_instructions, updated_at')
+      .eq('id', 'default')
+      .maybeSingle()
+      .then(({data, error}) => {
+        if (cancelled) {
+          return;
+        }
+        if (!error && data) {
+          setPaymentSettings(data as ShopPaymentSettingsRow);
+        } else {
+          setPaymentSettings(null);
+        }
+        setSettingsReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const goDetail = (state: CheckoutPaymentDetailState) => {
+    navigate(Routes.CheckoutPaymentDetail, {state});
+  };
+
+  const rowButtonStyle: React.CSSProperties = {
+    padding: 20,
+    marginBottom: 8,
+    width: '100%',
+    border: '1px solid var(--border-color)',
+    backgroundColor: APP_PALETTE.cartCardSurface,
+    cursor: 'pointer',
+    textAlign: 'left',
+  };
 
   const renderHeader = (): JSX.Element => {
     return (
       <components.Header
         showGoBack={true}
         title='Payment Method'
-        headerStyle={{backgroundColor: '#FCEDEA'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
       />
     );
   };
@@ -49,174 +91,110 @@ export const CheckoutPaymentMethod: React.FC = () => {
         className='scrollable'
         style={{
           padding: 20,
-          backgroundColor: 'var(--white-color)',
+          paddingBottom: 28,
+          backgroundColor: APP_PALETTE.appShell,
+          minHeight: 'calc(100vh - 120px)',
+          boxSizing: 'border-box',
         }}
       >
-        {/* Credit Cards */}
-        <components.Container containerStyle={{marginBottom: 8}}>
+        <components.Container
+          containerStyle={{...checkoutCardStyle, marginBottom: 8}}
+        >
           <div
             style={{
               marginBottom: 18,
               paddingBottom: 10,
-              borderBottom: '2px solid var(--main-color)',
+              borderBottom: '2px solid var(--border-color)',
             }}
           >
-            <h5>Credit Cards</h5>
+            <h5 style={{color: 'var(--text-on-light)'}}>Credit Cards</h5>
           </div>
-          {creditCards.map((card, index, array) => {
+          {CHECKOUT_CREDIT_CARDS.map((card, index, array) => {
             const isLast = index === array.length - 1;
 
             return (
-              <div
+              <button
                 key={card.id}
-                style={{marginBottom: isLast ? 0 : 15}}
-                onClick={() => {
-                  setSelectedCash(false);
-                  setSelectedPayPal(false);
-                  setSelectedApplePay(false);
-                  setSelectedCard(card.id);
+                type='button'
+                style={{
+                  padding: '12px 0',
+                  marginBottom: isLast ? 0 : 15,
+                  width: '100%',
+                  border: 'none',
+                  borderBottom: isLast
+                    ? 'none'
+                    : '1px solid var(--border-color)',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
                 }}
-                className='row-center-space-between clickable'
+                onClick={() =>
+                  goDetail({method: 'card', cardId: String(card.id)})
+                }
+                className='row-center-space-between'
               >
-                <span className='t14'>{card.number}</span>
-                <div
+                <span className='t14' style={{color: 'var(--text-on-light)'}}>
+                  {card.number}
+                </span>
+                <span
                   style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    border: `2px solid ${
-                      selectedCard === card.id
-                        ? 'var(--accent-color)'
-                        : '#999999'
-                    }`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    opacity: 0.55,
                   }}
-                  className='center'
+                  aria-hidden
                 >
-                  {selectedCard === card.id && (
-                    <div
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 5,
-                        backgroundColor: 'var(--accent-color)',
-                      }}
-                    />
-                  )}
-                </div>
-              </div>
+                  <svg.RightArrowSvg />
+                </span>
+              </button>
             );
           })}
         </components.Container>
-        {/* Apple Pay */}
-        <div
+
+        <button
+          type='button'
           style={{
-            padding: 20,
-            marginBottom: 8,
-            border: '1px solid #E5E5E5',
+            ...rowButtonStyle,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
           }}
-          className='row-center-space-between clickable'
-          onClick={() => {
-            setSelectedCard(null);
-            setSelectedCash(false);
-            setSelectedPayPal(false);
-            setSelectedApplePay(true);
-          }}
+          className='row-center-space-between'
+          onClick={() => goDetail({method: 'installments'})}
         >
-          <h5>Apple Pay</h5>
-          <div
+          <h5 style={{color: 'var(--text-on-light)', margin: 0}}>
+            Pagar en cuotas
+          </h5>
+          <span style={{display: 'flex', opacity: 0.55}} aria-hidden>
+            <svg.RightArrowSvg />
+          </span>
+        </button>
+
+        {zelleEnabled && (
+          <button
+            type='button'
             style={{
-              width: 20,
-              height: 20,
-              borderRadius: 10,
-              border: '2px solid #999999',
+              ...rowButtonStyle,
+              marginBottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
             }}
-            className='center'
+            className='row-center-space-between'
+            onClick={() => goDetail({method: 'zelle'})}
           >
-            {selectedApplePay && (
-              <div
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 5,
-                  backgroundColor: 'var(--accent-color)',
-                }}
-              />
-            )}
-          </div>
-        </div>
-        {/* Pay Pal */}
-        <div
-          style={{
-            padding: 20,
-            marginBottom: 8,
-            border: '1px solid #E5E5E5',
-          }}
-          className='row-center-space-between clickable'
-          onClick={() => {
-            setSelectedCard(null);
-            setSelectedCash(false);
-            setSelectedPayPal(true);
-            setSelectedApplePay(false);
-          }}
-        >
-          <h5>Pay Pal</h5>
-          <div
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 10,
-              border: '2px solid #999999',
-            }}
-            className='center'
-          >
-            {selectedPayPal && (
-              <div
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 5,
-                  backgroundColor: 'var(--accent-color)',
-                }}
-              />
-            )}
-          </div>
-        </div>
-        {/* Cash */}
-        <div
-          style={{
-            padding: 20,
-            border: '1px solid #E5E5E5',
-          }}
-          className='row-center-space-between clickable'
-          onClick={() => {
-            setSelectedCard(null);
-            setSelectedCash(true);
-            setSelectedPayPal(false);
-            setSelectedApplePay(false);
-          }}
-        >
-          <h5>Cash</h5>
-          <div
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: 10,
-              border: '2px solid #999999',
-            }}
-            className='center'
-          >
-            {selectedCash && (
-              <div
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 5,
-                  backgroundColor: 'var(--accent-color)',
-                }}
-              />
-            )}
-          </div>
-        </div>
+            <h5 style={{color: 'var(--text-on-light)', margin: 0}}>Zelle</h5>
+            <span style={{display: 'flex', opacity: 0.55}} aria-hidden>
+              <svg.RightArrowSvg />
+            </span>
+          </button>
+        )}
       </main>
     );
   };

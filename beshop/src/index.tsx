@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import {CartSync} from './components/CartSync';
 
 import {Provider} from 'react-redux';
 import {store} from './store';
@@ -14,6 +15,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <Provider store={store}>
+      <CartSync />
       <App />
     </Provider>
   </React.StrictMode>,

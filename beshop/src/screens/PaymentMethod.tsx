@@ -6,6 +6,7 @@ import {Routes} from '../enums';
 import {svg} from '../assets/svg';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import { APP_PALETTE } from '../theme/appPalette';
 
 const cards = [
   {
@@ -24,13 +25,13 @@ const cards = [
 
 export const PaymentMethod: React.FC = () => {
   const dispatch = hooks.useDispatch();
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   const navigate = hooks.useNavigate();
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -38,7 +39,7 @@ export const PaymentMethod: React.FC = () => {
       <components.Header
         title='Payment Method'
         showGoBack={true}
-        headerStyle={{backgroundColor: '#FCEDEA'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
       />
     );
   };

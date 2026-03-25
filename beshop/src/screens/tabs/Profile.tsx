@@ -1,4 +1,5 @@
-import React, {useEffect, useState} from 'react';
+import type {User} from '@supabase/supabase-js';
+import React, {useEffect, useMemo, useState} from 'react';
 
 import {hooks} from '../../hooks';
 import {items} from '../../items';
@@ -7,18 +8,68 @@ import {svg} from '../../assets/svg';
 import {Link} from 'react-router-dom';
 import {components} from '../../components';
 import {setColor} from '../../store/slices/bgSlice';
+import {isSupabaseConfigured, supabase} from '../../supabaseClient';
+import {isAdminEmail} from '../../utils/adminAccess';
+import { APP_PALETTE } from '../../theme/appPalette';
+
+function getDisplayName(user: User): string {
+  const meta = user.user_metadata as Record<string, unknown> | undefined;
+  const fullName =
+    typeof meta?.full_name === 'string' ? meta.full_name.trim() : '';
+  if (fullName) {
+    return fullName;
+  }
+  const email = user.email ?? '';
+  const local = email.split('@')[0];
+  return local || 'Account';
+}
+
+function getInitialLetter(displayName: string): string {
+  const ch = displayName.trim().charAt(0);
+  return ch ? ch.toUpperCase() : '?';
+}
 
 export const Profile: React.FC = () => {
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   const dispatch = hooks.useDispatch();
   const navigate = hooks.useNavigate();
 
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    dispatch(setColor('#FCEDEA'));
+    dispatch(setColor(APP_PALETTE.appShell));
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!supabase) {
+      setUser(null);
+      return;
+    }
+
+    supabase.auth.getSession().then(({data: {session}}) => {
+      setUser(session?.user ?? null);
+    });
+
+    const {
+      data: {subscription},
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const displayName = useMemo(
+    () => (user ? getDisplayName(user) : ''),
+    [user],
+  );
+
+  const initialLetter = useMemo(
+    () => (user ? getInitialLetter(displayName) : '?'),
+    [user, displayName],
+  );
 
   const renderHeader = (): JSX.Element => {
     return (
@@ -27,13 +78,67 @@ export const Profile: React.FC = () => {
         title='My Profile'
         showBasket={true}
         headerStyle={{
-          backgroundColor: '#FCEDEA',
+          backgroundColor: APP_PALETTE.headerBand,
         }}
       />
     );
   };
 
   const renderUserInfo = (): JSX.Element => {
+    if (!isSupabaseConfigured) {
+      return (
+        <div
+          className='container'
+          style={{marginTop: 27, marginBottom: 20, textAlign: 'center'}}
+        >
+          <p className='t16'>Connect Supabase in your environment to load your profile.</p>
+        </div>
+      );
+    }
+
+    if (!user) {
+      return (
+        <Link
+          style={{
+            display: 'inline-flex',
+            marginBottom: 20,
+            marginTop: 27,
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+          to={Routes.SignIn}
+          className='container clickable'
+        >
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              alignSelf: 'center',
+              border: '6px solid var(--accent-color)',
+              borderRadius: '50%',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'var(--pastel-color)',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 36,
+                fontWeight: 600,
+                color: 'var(--main-color)',
+              }}
+            >
+              ?
+            </span>
+          </div>
+          <h3>Sign in</h3>
+          <span className='t14'>Use your email to see your account here</span>
+        </Link>
+      );
+    }
+
     return (
       <Link
         style={{
@@ -54,20 +159,25 @@ export const Profile: React.FC = () => {
             border: '6px solid var(--accent-color)',
             borderRadius: '50%',
             marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'var(--pastel-color)',
+            overflow: 'hidden',
           }}
         >
-          <img
-            alt='user'
-            src='https://george-fx.github.io/beshop_api/assets/users/01.jpg'
+          <span
             style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
+              fontSize: 36,
+              fontWeight: 600,
+              color: 'var(--main-color)',
             }}
-          />
+          >
+            {initialLetter}
+          </span>
         </div>
-        <h3>Kristin Watson</h3>
-        <span className='t14'>kristinwatson@mail.com</span>
+        <h3 style={{textAlign: 'center'}}>{displayName}</h3>
+        <span className='t14'>{user.email ?? ''}</span>
       </Link>
     );
   };
@@ -100,10 +210,17 @@ export const Profile: React.FC = () => {
           icon={<svg.GiftSvg />}
         />
         <items.ProfileItem
-          to={Routes.TrackYourOrder}
+          to={Routes.OrderHistory}
           title={'Track my order'}
           icon={<svg.TruckSvg />}
         />
+        {user?.email && isAdminEmail(user.email) && (
+          <items.ProfileItem
+            title='Admin'
+            to={Routes.Admin}
+            icon={<svg.BriefcaseSvg />}
+          />
+        )}
         <items.ProfileItem
           title='FAQ'
           to={Routes.FAQ}
@@ -175,8 +292,11 @@ export const Profile: React.FC = () => {
             <components.Button
               text='sure'
               colorScheme='secondary'
-              onClick={() => {
+              onClick={async () => {
                 setShowModal(false);
+                if (supabase) {
+                  await supabase.auth.signOut();
+                }
                 navigate(Routes.SignIn);
               }}
             />
@@ -194,7 +314,7 @@ export const Profile: React.FC = () => {
     return (
       <main
         className='scrollable'
-        style={{backgroundColor: 'var(--white-color)'}}
+        style={{backgroundColor: 'var(--main-background)'}}
       >
         {renderUserInfo()}
         {renderProfileMenu()}

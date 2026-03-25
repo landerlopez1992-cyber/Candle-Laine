@@ -6,6 +6,7 @@ import {svg} from '../assets/svg';
 import {PromocodeType} from '../types';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import { APP_PALETTE } from '../theme/appPalette';
 
 const tabs = ['Current', 'Used'];
 
@@ -16,11 +17,11 @@ export const MyPromocodes: React.FC = () => {
 
   const {promocodesLoading, promocodes} = hooks.usePromocodes();
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -28,7 +29,7 @@ export const MyPromocodes: React.FC = () => {
       <components.Header
         title='My Promocodes'
         showGoBack={true}
-        headerStyle={{backgroundColor: '#FCEDEA'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
       />
     );
   };
@@ -50,14 +51,16 @@ export const MyPromocodes: React.FC = () => {
                 paddingBottom: 10,
                 borderBottomWidth: 2,
                 borderBottomStyle: 'solid',
-                borderBottomColor: isActive ? 'var(--main-color)' : '#909090',
+                borderBottomColor: isActive
+                  ? 'var(--accent-color)'
+                  : 'var(--border-color)',
               }}
               onClick={() => setActiveTab(index)}
               className='clickable'
             >
               <h4
                 style={{
-                  color: isActive ? 'var(--main-color)' : '#909090',
+                  color: isActive ? 'var(--main-color)' : 'var(--text-color)',
                 }}
               >
                 {tab}
@@ -92,7 +95,7 @@ export const MyPromocodes: React.FC = () => {
         className='scrollable'
         style={{
           padding: '32px 20px 20px 20px',
-          backgroundColor: 'var(--white-color)',
+          backgroundColor: 'var(--main-background)',
         }}
       >
         {renderTabs()}

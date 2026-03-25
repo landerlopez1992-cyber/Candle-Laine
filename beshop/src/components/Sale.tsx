@@ -17,7 +17,7 @@ export const Sale: React.FC<Props> = ({
         style={{
           width: 40,
           height: 16,
-          backgroundColor: '#A3D2A2',
+          backgroundColor: 'var(--sale-badge-bg, #A3D2A2)',
           ...containerStyle,
         }}
         className='center'
@@ -27,7 +27,7 @@ export const Sale: React.FC<Props> = ({
             fontFamily: 'Lato',
             fontSize: 8,
             textTransform: 'uppercase',
-            color: 'var(--white-color)',
+            color: '#fff',
           }}
         >
           sale

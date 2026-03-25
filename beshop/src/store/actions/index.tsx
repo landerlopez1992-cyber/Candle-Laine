@@ -16,6 +16,7 @@ import {removeFromWishlist} from '../slices/wishlistSlice';
 import {setSelectedCategories} from '../slices/filterSlice';
 import {setPhoneVerified} from '../slices/verificationSlice';
 import {setEmailVerified} from '../slices/verificationSlice';
+import {hydrateCart} from '../slices/cartSlice';
 
 export const actions = {
   setUser,
@@ -36,4 +37,5 @@ export const actions = {
   setSelectedColors,
   removeFromWishlist,
   setSelectedCategories,
+  hydrateCart,
 };

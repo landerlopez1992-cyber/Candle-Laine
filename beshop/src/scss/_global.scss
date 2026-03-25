@@ -1,3 +1,8 @@
+// Iconos del header sobre banda oscura (misma idea que cabecera en referencias de diseño)
+header svg path {
+  fill: var(--main-color);
+}
+
 .app {
   display: flex;
   flex-direction: column;
@@ -44,4 +49,9 @@
 input::placeholder,
 textarea::placeholder {
   color: #999999;
+}
+
+.input-field::placeholder {
+  color: var(--text-color);
+  opacity: 0.95;
 }

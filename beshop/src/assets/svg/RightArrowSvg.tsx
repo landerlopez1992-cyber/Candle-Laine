@@ -10,7 +10,7 @@ export const RightArrowSvg: React.FC = () => {
     >
       <g>
         <path
-          stroke='#222'
+          stroke='var(--main-color)'
           strokeLinecap='round'
           strokeLinejoin='round'
           strokeWidth={1.5}

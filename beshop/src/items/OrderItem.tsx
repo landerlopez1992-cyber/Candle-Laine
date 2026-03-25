@@ -8,6 +8,7 @@ import {ProductType} from '../types';
 import {components} from '../components';
 import {actions} from '../store/actions';
 import {removeFromCart} from '../store/slices/cartSlice';
+import {APP_PALETTE} from '../theme/appPalette';
 
 type Props = {
   isLast: boolean;
@@ -30,7 +31,7 @@ export const OrderItem: React.FC<Props> = ({product, isLast}) => {
         flexDirection: 'row',
         position: 'relative',
         marginBottom: isLast ? 0 : 8,
-        backgroundColor: 'var(--white-color)',
+        backgroundColor: APP_PALETTE.cartCardSurface,
         border: '1px solid var(--border-color)',
       }}
       onClick={() => navigate(`/product/${product.id}`, {state: {product}})}
@@ -66,13 +67,13 @@ export const OrderItem: React.FC<Props> = ({product, isLast}) => {
         <h6
           className='number-of-lines-1'
           style={{
-            color: 'var(--main-color)',
+            color: 'var(--text-on-light)',
             marginBottom: 7,
           }}
         >
           {product.name}
         </h6>
-        <components.Price product={product} />
+        <components.Price product={product} variant='onLight' />
       </div>
       {/* Buttons */}
       <div
@@ -105,7 +106,7 @@ export const OrderItem: React.FC<Props> = ({product, isLast}) => {
           </button>
           <span
             className='t10'
-            style={{color: 'var(--main-color)'}}
+            style={{color: 'var(--text-on-light)'}}
           >
             {qty}
           </span>

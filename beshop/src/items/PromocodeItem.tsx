@@ -13,9 +13,10 @@ export const PromocodeItem: React.FC<Props> = ({promocode, isLast}) => {
     <div
       style={{
         width: '100%',
-        backgroundColor: 'var(--white-color)',
+        backgroundColor: 'var(--list-row-bg)',
         border: '1px solid var(--border-color)',
-        padding: 10,
+        borderRadius: 8,
+        padding: 12,
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -28,7 +29,7 @@ export const PromocodeItem: React.FC<Props> = ({promocode, isLast}) => {
         <svg.TicketSvg />
       </div>
       <h5
-        style={{marginBottom: 3}}
+        style={{marginBottom: 3, color: 'var(--main-color)'}}
         className='number-of-lines-1'
       >
         {promocode.name}
@@ -54,7 +55,7 @@ export const PromocodeItem: React.FC<Props> = ({promocode, isLast}) => {
           {promocode.discount}% Off
         </span>
         <span
-          style={{marginBottom: 19}}
+          style={{marginBottom: 19, color: 'var(--text-color)'}}
           className='t12 number-of-lines-1'
         >
           {promocode.expiry}
@@ -65,12 +66,17 @@ export const PromocodeItem: React.FC<Props> = ({promocode, isLast}) => {
           display: 'flex',
           padding: '6px 12px',
           alignItems: 'center',
-          backgroundColor: '#FAF9FF',
+          backgroundColor: 'var(--main-background)',
           justifyContent: 'space-between',
           border: '1px solid var(--border-color)',
         }}
       >
-        <span className='t12'>{promocode.code}</span>
+        <span
+          className='t12'
+          style={{color: 'var(--main-color)'}}
+        >
+          {promocode.code}
+        </span>
         <svg.CopySvg />
       </div>
     </div>

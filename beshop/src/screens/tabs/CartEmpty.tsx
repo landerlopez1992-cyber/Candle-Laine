@@ -7,15 +7,16 @@ import {hooks} from '../../hooks';
 import {RootState} from '../../store';
 import {components} from '../../components';
 import {actions} from '../../store/actions';
+import { APP_PALETTE } from '../../theme/appPalette';
 
 export const CartEmpty: React.FC = () => {
   const dispatch = useDispatch<ThunkDispatch<RootState, void, Action>>();
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {

@@ -5,6 +5,7 @@ import {Routes} from '../enums';
 import {svg} from '../assets/svg';
 import {components} from '../components';
 import {actions} from '../store/actions';
+import { APP_PALETTE } from '../theme/appPalette';
 
 const addressess = [
   {
@@ -30,18 +31,18 @@ const addressess = [
 export const MyAddress: React.FC = () => {
   const navigate = hooks.useNavigate();
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
   const dispatch = hooks.useDispatch();
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
     return (
       <components.Header
-        headerStyle={{backgroundColor: '#FCEDEA'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
         showGoBack={true}
         title='My Address'
       />
@@ -54,7 +55,7 @@ export const MyAddress: React.FC = () => {
         className='scrollable'
         style={{
           padding: 20,
-          backgroundColor: 'var(--white-color)',
+          backgroundColor: 'var(--main-background)',
         }}
       >
         {addressess.map((address, index, array) => {
@@ -64,15 +65,29 @@ export const MyAddress: React.FC = () => {
             <button
               key={address.id}
               className='row-center'
-              style={{marginBottom: isLast ? 0 : 8, width: '100%'}}
+              style={{
+                marginBottom: isLast ? 0 : 10,
+                width: '100%',
+                padding: '14px 16px',
+                borderRadius: 8,
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--list-row-bg)',
+              }}
               onClick={() => {
                 navigate(Routes.AddANewAddress);
               }}
             >
               {address.icon}
-              <div style={{marginLeft: 14, marginRight: 'auto'}}>
-                <h5 style={{marginBottom: 4}}>{address.name}</h5>
-                <p className='t14'>{address.address}</p>
+              <div style={{marginLeft: 14, marginRight: 'auto', textAlign: 'left'}}>
+                <h5 style={{marginBottom: 4, color: 'var(--main-color)'}}>
+                  {address.name}
+                </h5>
+                <p
+                  className='t14'
+                  style={{color: 'var(--text-color)'}}
+                >
+                  {address.address}
+                </p>
               </div>
               <svg.EditSvg />
             </button>

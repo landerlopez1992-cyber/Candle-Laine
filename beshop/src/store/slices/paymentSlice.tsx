@@ -1,12 +1,21 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 
-interface PaymentState {
+export type CheckoutPaymentKind = 'zelle' | 'installments' | 'card';
+
+export type CheckoutPaymentSelection = {
+  kind: CheckoutPaymentKind;
+  cardId?: string;
+};
+
+export interface PaymentState {
   cvv: string;
   name: string;
   address: string;
   cardNumber: string;
   expiryDate: string;
   cardHolderName: string;
+  /** Método confirmado en checkout (detalle → Aceptar). */
+  checkoutPaymentSelection: CheckoutPaymentSelection | null;
 }
 
 const initialState: PaymentState = {
@@ -16,6 +25,7 @@ const initialState: PaymentState = {
   expiryDate: '',
   cardNumber: '',
   cardHolderName: '',
+  checkoutPaymentSelection: {kind: 'card', cardId: '1'},
 };
 
 export const paymentSlice = createSlice({
@@ -40,6 +50,12 @@ export const paymentSlice = createSlice({
     setCardHolderName: (state, action: PayloadAction<string>) => {
       state.cardHolderName = action.payload;
     },
+    setCheckoutPaymentSelection: (
+      state,
+      action: PayloadAction<CheckoutPaymentSelection | null>,
+    ) => {
+      state.checkoutPaymentSelection = action.payload;
+    },
   },
 });
 
@@ -50,6 +66,7 @@ export const {
   setExpiryDate,
   setCvv,
   setCardHolderName,
+  setCheckoutPaymentSelection,
 } = paymentSlice.actions;
 
 export default paymentSlice.reducer;

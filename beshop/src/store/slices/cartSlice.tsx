@@ -107,10 +107,28 @@ export const cartSlice = createSlice({
     setPromoCode: (state, action: PayloadAction<string>) => {
       state.promoCode = action.payload;
     },
+    /** Reemplaza el carrito (p. ej. carga desde Supabase tras login). */
+    hydrateCart: (state, action: PayloadAction<ProductType[]>) => {
+      state.list = action.payload;
+      let sub = 0;
+      for (const p of action.payload) {
+        sub += Number(p.price) * (p.quantity ?? 1);
+      }
+      state.subtotal = Math.round(sub * 100) / 100;
+      const disc = state.discount / 100;
+      state.total = Math.round(state.subtotal * (1 - disc) * 100) / 100;
+      state.discountAmount = Number((state.subtotal - state.total).toFixed(2));
+    },
   },
 });
 
-export const {addToCart, resetCart, setDiscount, setPromoCode, removeFromCart} =
-  cartSlice.actions;
+export const {
+  addToCart,
+  resetCart,
+  setDiscount,
+  setPromoCode,
+  removeFromCart,
+  hydrateCart,
+} = cartSlice.actions;
 
 export default cartSlice.reducer;

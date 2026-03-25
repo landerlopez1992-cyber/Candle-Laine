@@ -10,7 +10,6 @@ export const GET_CATEGORIES = `${MAIN_URL}api/categories.json`;
 export const URLS = {
   GET_ORDERS,
   GET_BANNERS,
-  GET_REVIEWS,
   GET_PRODUCTS,
   GET_PROMOCODES,
   GET_CATEGORIES,

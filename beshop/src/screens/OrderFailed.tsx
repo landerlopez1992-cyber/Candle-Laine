@@ -5,17 +5,18 @@ import {Routes} from '../enums';
 import {Screens} from '../enums';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import { APP_PALETTE } from '../theme/appPalette';
 
 export const OrderFailed: React.FC = () => {
   const dispatch = hooks.useDispatch();
 
   const navigate = hooks.useNavigate();
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderContent = (): JSX.Element => {

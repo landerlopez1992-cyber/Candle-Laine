@@ -7,15 +7,16 @@ import {components} from '../components';
 import {actions} from '../store/actions';
 
 import background from '../assets/bg/07.png';
+import { APP_PALETTE } from '../theme/appPalette';
 
 export const NewPassword: React.FC = () => {
   const dispatch = hooks.useDispatch();
 
-  hooks.useThemeColor('#fff');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#fff'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {

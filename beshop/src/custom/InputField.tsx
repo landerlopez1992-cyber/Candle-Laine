@@ -9,6 +9,12 @@ type Props = {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   placeholder?: string;
   icon?: JSX.Element;
+  value?: string;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  disabled?: boolean;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
+  maxLength?: number;
+  autoComplete?: string;
 };
 
 export const InputField: FC<Props> = ({
@@ -18,6 +24,12 @@ export const InputField: FC<Props> = ({
   icon,
   clickable,
   type = 'text',
+  value,
+  onChange,
+  disabled,
+  inputMode,
+  maxLength = 50,
+  autoComplete,
 }) => {
   return (
     <div
@@ -29,8 +41,8 @@ export const InputField: FC<Props> = ({
         alignItems: 'center',
         position: 'relative',
         display: 'flex',
-        border: '1px solid #FCEDEA',
-        backgroundColor: 'var(--white-color)',
+        border: '1px solid var(--border-color)',
+        backgroundColor: 'var(--input-background)',
         ...containerStyle,
       }}
     >
@@ -38,8 +50,14 @@ export const InputField: FC<Props> = ({
         className='input-field'
         autoCapitalize={autoCapitalize}
         placeholder={placeholder}
-        maxLength={50}
+        maxLength={maxLength}
         type={type}
+        disabled={disabled}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        {...(value !== undefined
+          ? {value, onChange}
+          : {})}
         style={{
           width: '100%',
           height: '100%',
@@ -51,6 +69,7 @@ export const InputField: FC<Props> = ({
           fontSize: 18,
           color: 'var(--main-color)',
           fontFamily: 'League Spartan',
+          caretColor: 'var(--accent-color)',
         }}
       />
       {icon && !clickable && <div>{icon}</div>}

@@ -27,12 +27,24 @@ const stack = createBrowserRouter([
     element: <screens.FAQ />,
   },
   {
+    path: Routes.AdminCategoryDetail,
+    element: <screens.AdminCategoryDetail />,
+  },
+  {
+    path: Routes.Admin,
+    element: <screens.Admin />,
+  },
+  {
     path: Routes.OrderHistoryEmpty,
     element: <screens.OrderHistoryEmpty />,
   },
   {
     path: Routes.CheckoutPaymentMethod,
     element: <screens.CheckoutPaymentMethod />,
+  },
+  {
+    path: Routes.CheckoutPaymentDetail,
+    element: <screens.CheckoutPaymentDetail />,
   },
   {
     path: Routes.TrackYourOrder,
@@ -53,6 +65,10 @@ const stack = createBrowserRouter([
   {
     path: Routes.VerifyYourEmail,
     element: <screens.VerifyYourEmail />,
+  },
+  {
+    path: Routes.AuthCallback,
+    element: <screens.AuthCallback />,
   },
   {
     path: Routes.MyPromocodes,

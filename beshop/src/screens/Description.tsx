@@ -3,6 +3,7 @@ import React, {useEffect} from 'react';
 import {hooks} from '../hooks';
 import {components} from '../components';
 import {actions} from '../store/actions';
+import { APP_PALETTE } from '../theme/appPalette';
 
 export const Description: React.FC = () => {
   const dispatch = hooks.useDispatch();
@@ -10,11 +11,11 @@ export const Description: React.FC = () => {
   const location = hooks.useLocation();
   const product = location.state.product;
 
-  hooks.useThemeColor('#f5fafb');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#f5fafb'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {

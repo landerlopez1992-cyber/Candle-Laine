@@ -11,7 +11,7 @@ export const AddToCartSvg: React.FC = () => {
       <rect
         width={40}
         height={40}
-        fill='#D05278'
+        fill='var(--accent-color)'
         rx={20}
       />
       <path

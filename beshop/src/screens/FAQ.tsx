@@ -5,6 +5,7 @@ import {hooks} from '../hooks';
 import {svg} from '../assets/svg';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import { APP_PALETTE } from '../theme/appPalette';
 
 const faqData = [
   {
@@ -46,14 +47,14 @@ const faqData = [
 ];
 
 export const FAQ: React.FC = () => {
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
   const dispatch = hooks.useDispatch();
 
   const [openItem, setOpenItem] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -61,7 +62,7 @@ export const FAQ: React.FC = () => {
       <components.Header
         title='FAQ'
         showGoBack={true}
-        headerStyle={{backgroundColor: '#FCEDEA'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
       />
     );
   };
@@ -71,7 +72,7 @@ export const FAQ: React.FC = () => {
       <main
         className='scrollable'
         style={{
-          backgroundColor: 'var(--white-color)',
+          backgroundColor: 'var(--main-background)',
           padding: 20,
         }}
       >
@@ -89,9 +90,10 @@ export const FAQ: React.FC = () => {
                 key={item.id.toString()}
                 value={item.id.toString()}
                 style={{
-                  backgroundColor: '#fff',
-                  marginBottom: isLast ? 0 : 4,
+                  backgroundColor: 'var(--list-row-bg)',
+                  marginBottom: isLast ? 0 : 8,
                   border: '1px solid var(--border-color)',
+                  borderRadius: 8,
                 }}
                 onClick={() => setOpenItem(isOpen ? null : item.id)}
               >
@@ -105,14 +107,21 @@ export const FAQ: React.FC = () => {
                     justifyContent: 'space-between',
                   }}
                 >
-                  <h5>{item.question}</h5>
+                  <h5 style={{color: 'var(--main-color)', textAlign: 'left'}}>
+                    {item.question}
+                  </h5>
                   {isOpen ? <svg.OpenSvg /> : <svg.OpenArrowSvg />}
                 </Accordion.Trigger>
                 {/* Content */}
                 <Accordion.Content
                   style={{paddingLeft: 20, paddingRight: 20, paddingBottom: 20}}
                 >
-                  <p className='t16'>{item.answer}</p>
+                  <p
+                    className='t16'
+                    style={{color: 'var(--text-color)'}}
+                  >
+                    {item.answer}
+                  </p>
                 </Accordion.Content>
               </Accordion.Item>
             );

@@ -2,7 +2,8 @@ import {ColorType} from './ColorType';
 import {ReviewType} from './ReviewType';
 
 export type ProductType = {
-  id: number;
+  /** Número (JSON demo) o UUID string (Supabase `shop_products`). */
+  id: number | string;
   name: string;
   price: number;
   rating: number;

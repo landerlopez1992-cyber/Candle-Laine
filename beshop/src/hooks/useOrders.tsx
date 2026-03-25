@@ -1,28 +1,51 @@
-import {useState, useEffect} from 'react';
-import axios from 'axios';
+import {useState, useEffect, useCallback} from 'react';
 
-import {URLS} from '../config';
+import {supabase} from '../supabaseClient';
+import type {OrderType} from '../types';
+import {mapOrderRowToOrderType, SUPABASE_ORDER_SELECT} from '../utils/orderMap';
 
 export const useOrders = () => {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<OrderType[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
-  const getOrders = async () => {
+  const getOrders = useCallback(async () => {
     setOrdersLoading(true);
 
-    try {
-      const response = await axios.get(URLS.GET_ORDERS);
-      setOrders(response.data.orders);
-    } catch (error) {
-      console.error(error);
-    } finally {
+    if (!supabase) {
+      setOrders([]);
       setOrdersLoading(false);
+      return;
     }
-  };
 
-  useEffect(() => {
-    getOrders();
+    const {
+      data: {session},
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      setOrders([]);
+      setOrdersLoading(false);
+      return;
+    }
+
+    const {data, error} = await supabase
+      .from('orders')
+      .select(SUPABASE_ORDER_SELECT)
+      .eq('user_id', session.user.id)
+      .order('created_at', {ascending: false});
+
+    if (error) {
+      console.error(error);
+      setOrders([]);
+    } else {
+      setOrders((data ?? []).map((row) => mapOrderRowToOrderType(row)));
+    }
+
+    setOrdersLoading(false);
   }, []);
 
-  return {ordersLoading, orders};
+  useEffect(() => {
+    void getOrders();
+  }, [getOrders]);
+
+  return {ordersLoading, orders, refetchOrders: getOrders};
 };

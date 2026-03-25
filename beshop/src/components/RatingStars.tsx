@@ -21,10 +21,8 @@ export const RatingStars: React.FC<Props> = ({
       }}
     >
       <button
-        onClick={() => {
-          setRating(1);
-          setRating(rating === 1 ? 0 : 1);
-        }}
+        type='button'
+        onClick={() => setRating(rating === 1 ? 0 : 1)}
         style={{marginRight: 4, borderRadius: 20}}
       >
         <svg
@@ -43,6 +41,7 @@ export const RatingStars: React.FC<Props> = ({
         </svg>
       </button>
       <button
+        type='button'
         onClick={() => setRating(2)}
         style={{marginRight: 4, borderRadius: 20}}
       >
@@ -62,6 +61,7 @@ export const RatingStars: React.FC<Props> = ({
         </svg>
       </button>
       <button
+        type='button'
         onClick={() => setRating(3)}
         style={{marginRight: 4, borderRadius: 20}}
       >
@@ -81,6 +81,7 @@ export const RatingStars: React.FC<Props> = ({
         </svg>
       </button>
       <button
+        type='button'
         onClick={() => setRating(4)}
         style={{marginRight: 4, borderRadius: 20}}
       >
@@ -100,6 +101,7 @@ export const RatingStars: React.FC<Props> = ({
         </svg>
       </button>
       <button
+        type='button'
         onClick={() => setRating(5)}
         style={{borderRadius: 20}}
       >

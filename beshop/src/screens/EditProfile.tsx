@@ -5,17 +5,17 @@ import {custom} from '../custom';
 import {components} from '../components';
 import {actions} from '../store/actions';
 
-import background from '../assets/bg/07.png';
+import {APP_PALETTE} from '../theme/appPalette';
 
 export const EditProfile: React.FC = () => {
   const navigate = hooks.useNavigate();
   const dispatch = hooks.useDispatch();
 
-  hooks.useThemeColor('#fff');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#fff'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -23,23 +23,27 @@ export const EditProfile: React.FC = () => {
       <components.Header
         title='Edit Profile'
         showGoBack={true}
-        headerStyle={{backgroundColor: 'transparent'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
       />
     );
   };
 
   const renderContent = (): JSX.Element => {
     return (
-      <section className='scrollable'>
+      <section
+        className='scrollable'
+        style={{
+          backgroundColor: 'var(--main-background)',
+          padding: 20,
+          minHeight: '100%',
+        }}
+      >
         <div
           style={{
-            backgroundImage: `url(${background})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            padding: 20,
-            margin: 20,
-            paddingTop: 40,
-            height: '100%',
+            backgroundColor: 'var(--input-background)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 12,
+            padding: 24,
           }}
         >
           <div
@@ -47,10 +51,10 @@ export const EditProfile: React.FC = () => {
               width: 96,
               height: 96,
               alignSelf: 'center',
-              border: '6px solid var(--accent-color)',
+              border: '4px solid var(--accent-color)',
               borderRadius: '50%',
               margin: '0 auto',
-              marginBottom: 30,
+              marginBottom: 24,
             }}
           >
             <img
@@ -60,6 +64,7 @@ export const EditProfile: React.FC = () => {
                 width: '100%',
                 height: '100%',
                 borderRadius: '50%',
+                objectFit: 'cover',
               }}
             />
           </div>
@@ -77,7 +82,7 @@ export const EditProfile: React.FC = () => {
           />
           <custom.InputField
             placeholder='USA / New York'
-            containerStyle={{marginBottom: 10}}
+            containerStyle={{marginBottom: 18}}
           />
           <components.Button
             text='save changes'

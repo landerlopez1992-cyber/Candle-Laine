@@ -5,17 +5,18 @@ import {Routes} from '../enums';
 import {custom} from '../custom';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import { APP_PALETTE } from '../theme/appPalette';
 
 // import background from '../assets/bg/03.png';
 
 export const ShippingAPaymentInfo: React.FC = () => {
   const dispatch = hooks.useDispatch();
 
-  hooks.useThemeColor('#fff');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#fff'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {

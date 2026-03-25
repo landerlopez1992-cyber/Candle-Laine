@@ -7,6 +7,8 @@ import {SortState} from './slices/sortSlice';
 import {FilterState} from './slices/filterSlice';
 import {WishlistState} from './slices/wishlistSlice';
 import {VerificationState} from './slices/verificationSlice';
+import type {PaymentState} from './slices/paymentSlice';
+import type {PromocodelistState} from './slices/promocodeSlice';
 
 import {bgSlice} from './slices/bgSlice';
 import {tabSlice} from './slices/tabSlice';
@@ -42,6 +44,9 @@ export interface RootState {
   cartSlice: CartType;
   sortSlice: SortState;
   filterSlice: FilterState;
+  paymentSlice: PaymentState;
   wishlistSlice: WishlistState;
+  promocodeSlice: PromocodelistState;
+  firstLaunchSlice: {firstLaunch: boolean};
   verificationSlice: VerificationState;
 }

@@ -28,6 +28,10 @@ import {ShippingAPaymentInfo} from './ShippingAPaymentInfo';
 import {EmailHasBeenVerified} from './EmailHasBeenVerified';
 import {SignUpAccountCreated} from './SignUpAccountCreated';
 import {CheckoutPaymentMethod} from './CheckoutPaymentMethod';
+import {CheckoutPaymentDetail} from './CheckoutPaymentDetail';
+import {AuthCallback} from './AuthCallback';
+import {Admin} from './Admin';
+import {AdminCategoryDetail} from './admin/AdminCategoryDetail';
 import {VerifyYourPhoneNumber} from './VerifyYourPhoneNumber';
 import {ShippingAndPaymentInfo} from './ShippingAndPaymentInfo';
 import {ForgotPasswordSentEmail} from './ForgotPasswordSentEmail';
@@ -65,6 +69,10 @@ export const screens = {
   SignUpAccountCreated,
   EmailHasBeenVerified,
   CheckoutPaymentMethod,
+  CheckoutPaymentDetail,
+  AuthCallback,
+  Admin,
+  AdminCategoryDetail,
   VerifyYourPhoneNumber,
   ShippingAndPaymentInfo,
   CheckoutShippingDetails,

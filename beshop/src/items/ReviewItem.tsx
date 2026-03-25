@@ -2,6 +2,7 @@ import React from 'react';
 
 import {ReviewType} from '../types';
 import {components} from '../components';
+import {reviewAvatarUrl} from '../utils/mapProductReview';
 
 type Props = {
   review: ReviewType;
@@ -22,7 +23,7 @@ export const ReviewItem: React.FC<Props> = ({review, isLast}) => {
       }}
     >
       <img
-        src={review.photo}
+        src={review.photo || reviewAvatarUrl(review.name)}
         alt={review.name}
         style={{
           width: 30,

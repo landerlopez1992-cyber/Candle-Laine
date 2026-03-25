@@ -5,6 +5,7 @@ import {custom} from '../custom';
 import {svg} from '../assets/svg';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import { APP_PALETTE } from '../theme/appPalette';
 
 export const AddANewAddress: React.FC = () => {
   const navigate = hooks.useNavigate();
@@ -12,11 +13,11 @@ export const AddANewAddress: React.FC = () => {
   const [useCurrentLocation, setUseCurrentLocation] = useState<boolean>(false);
 
   const dispatch = hooks.useDispatch();
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -24,7 +25,7 @@ export const AddANewAddress: React.FC = () => {
       <components.Header
         showGoBack={true}
         title='Add A New Address'
-        headerStyle={{backgroundColor: '#FCEDEA'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
       />
     );
   };

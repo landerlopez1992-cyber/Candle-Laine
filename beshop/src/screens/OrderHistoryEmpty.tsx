@@ -3,15 +3,16 @@ import React, {useEffect} from 'react';
 import {hooks} from '../hooks';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import { APP_PALETTE } from '../theme/appPalette';
 
 export const OrderHistoryEmpty: React.FC = () => {
   const dispatch = hooks.useDispatch();
 
-  hooks.useThemeColor('#fff');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#fff'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {

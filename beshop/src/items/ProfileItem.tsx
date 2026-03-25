@@ -30,10 +30,11 @@ export const ProfileItem: React.FC<Props> = ({
       <Link
         style={{
           borderTopWidth: 1,
-          border: 'none',
+          border: '1px solid var(--border-color)',
           width: '100%',
-          backgroundColor: 'var(--white-color)',
-          // padding: '15px 16px',
+          backgroundColor: 'var(--list-row-bg)',
+          padding: '14px 16px',
+          borderRadius: 8,
           marginBottom: isLast ? 0 : 8,
           ...containerStyle,
         }}
@@ -41,7 +42,15 @@ export const ProfileItem: React.FC<Props> = ({
         className='row-center'
       >
         {icon}
-        <h5 style={{marginLeft: 14, ...titleStyle}}>{title}</h5>
+        <h5
+          style={{
+            marginLeft: 14,
+            color: 'var(--main-color)',
+            ...titleStyle,
+          }}
+        >
+          {title}
+        </h5>
         {to !== Routes.SignIn && to && (
           <div style={{marginLeft: 'auto'}}>
             <svg.RightArrowSvg />
@@ -56,10 +65,11 @@ export const ProfileItem: React.FC<Props> = ({
       <button
         style={{
           borderTopWidth: 1,
-          border: 'none',
+          border: '1px solid var(--border-color)',
           width: '100%',
-          backgroundColor: 'var(--white-color)',
-          // padding: '15px 16px',
+          backgroundColor: 'var(--list-row-bg)',
+          padding: '14px 16px',
+          borderRadius: 8,
           marginBottom: isLast ? 0 : 8,
           ...containerStyle,
         }}
@@ -67,7 +77,15 @@ export const ProfileItem: React.FC<Props> = ({
         onClick={onClick}
       >
         {icon}
-        <h5 style={{marginLeft: 14, ...titleStyle}}>{title}</h5>
+        <h5
+          style={{
+            marginLeft: 14,
+            color: 'var(--main-color)',
+            ...titleStyle,
+          }}
+        >
+          {title}
+        </h5>
         {to !== Routes.SignIn && to && (
           <div style={{marginLeft: 'auto'}}>
             <svg.RightArrowSvg />

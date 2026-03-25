@@ -10,19 +10,20 @@ import {RootState} from '../../store';
 import {ProductType} from '../../types';
 import {components} from '../../components';
 import {actions} from '../../store/actions';
+import { APP_PALETTE } from '../../theme/appPalette';
 
 export const Order: React.FC = () => {
   const dispatch = hooks.useDispatch();
 
   const [promocodeApplied, setPromocodeApplied] = useState<boolean>(false);
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   const cart = useSelector((state: RootState) => state.cartSlice);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -32,7 +33,7 @@ export const Order: React.FC = () => {
         showBasket={true}
         showGoBack={true}
         headerStyle={{
-          backgroundColor: '#FCEDEA',
+          backgroundColor: APP_PALETTE.headerBand,
         }}
       />
     );
@@ -103,20 +104,24 @@ export const Order: React.FC = () => {
         className='container'
         style={{marginBottom: 10}}
       >
-        <components.Container>
+        <components.Container
+          containerStyle={{
+            backgroundColor: APP_PALETTE.cartCardSurface,
+          }}
+        >
           <div
             className='row-center-space-between'
             style={{marginBottom: 9}}
           >
             <span
               className='t14'
-              style={{color: 'var(--main-color)'}}
+              style={{color: 'var(--text-on-light)'}}
             >
               Subtotal
             </span>
             <span
               className='t14'
-              style={{color: 'var(--main-text)'}}
+              style={{color: 'var(--text-on-light)'}}
             >
               ${cart.subtotal.toFixed(2)}
             </span>
@@ -125,11 +130,13 @@ export const Order: React.FC = () => {
             className='row-center-space-between'
             style={{
               paddingBottom: 10,
-              borderBottom: '2px solid var(--main-color)',
+              borderBottom: '2px solid var(--border-color)',
               marginBottom: 10,
             }}
           >
-            <span className='t14'>Delivery</span>
+            <span className='t14' style={{color: 'var(--text-on-light)'}}>
+              Delivery
+            </span>
             <span
               className='t14'
               style={{color: '#00824B'}}
@@ -140,13 +147,13 @@ export const Order: React.FC = () => {
           <div className='row-center-space-between'>
             <span
               className='t14'
-              style={{color: 'var(--main-color)'}}
+              style={{color: 'var(--text-on-light)'}}
             >
               Total
             </span>
             <span
               className='t14'
-              style={{color: 'var(--main-color)'}}
+              style={{color: 'var(--text-on-light)'}}
             >
               ${cart.total.toFixed(2)}
             </span>
@@ -174,7 +181,13 @@ export const Order: React.FC = () => {
     return (
       <main
         className='scrollable'
-        style={{paddingTop: 16, backgroundColor: 'var(--white-color)'}}
+        style={{
+          paddingTop: 16,
+          paddingBottom: 28,
+          backgroundColor: APP_PALETTE.appShell,
+          minHeight: 'calc(100vh - 120px)',
+          boxSizing: 'border-box',
+        }}
       >
         {renderProducts()}
         {renderPromocode()}

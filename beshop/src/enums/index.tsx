@@ -42,9 +42,16 @@ export enum Routes {
   FAQ = '/faq',
   MyAddress = '/my-address',
   CheckoutPaymentMethod = '/checkout-payment-method',
+  CheckoutPaymentDetail = '/checkout-payment-detail',
   CheckoutShippingDetails = '/checkout-shipping-details',
   PaymentMethod = '/payment-method',
   AddANewAddress = '/add-a-new-address',
   AddANewCard = '/add-a-new-card',
   VerifyYourPhoneNumber = '/verify-your-phone-number',
+  /** Supabase email confirmation redirect; add in Dashboard → Auth → Redirect URLs. */
+  AuthCallback = '/auth/callback',
+  /** Admin tools (only for allowlisted email in utils/adminAccess). */
+  Admin = '/admin',
+  /** Detalle de categoría: subcategorías y productos filtrados. */
+  AdminCategoryDetail = '/admin/categoria/:categoryId',
 }

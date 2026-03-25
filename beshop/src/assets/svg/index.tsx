@@ -1,3 +1,7 @@
+import {AdminNavProductsSvg} from './AdminNavProductsSvg';
+import {AdminSidebarGiftSvg} from './AdminSidebarGiftSvg';
+import {AdminSidebarListSvg} from './AdminSidebarListSvg';
+import {AdminSidebarTruckSvg} from './AdminSidebarTruckSvg';
 import {BagSvg} from './BagSvg';
 import {WaySvg} from './WaySvg';
 import {OpenSvg} from './OpenSvg';
@@ -17,14 +21,11 @@ import {HeartSvg} from './HeartSvg';
 import {MinusSvg} from './MinusSvg';
 import {TicketSvg} from './TicketSvg';
 import {LogOutSvg} from './LogOutSvg';
-import {GoogleSvg} from './GoogleSvg';
 import {GoBackSvg} from './GoBackSvg';
 import {BasketSvg} from './BasketSvg';
 import {MapPinSvg} from './MapPinSvg';
 import {EyeOffSvg} from './EyeOffSvg';
-import {TwitterSvg} from './TwitterSvg';
 import {FiltersSvg} from './FiltersSvg';
-import {FaceBookSvg} from './FaceBookSvg';
 import {CalendarSvg} from './CalendarSvg';
 import {HeartBigSvg} from './HeartBigSvg';
 import {CanceledSvg} from './CanceledSvg';
@@ -63,6 +64,10 @@ import {ProfileSvg} from './tabs/ProfileSvg';
 import {WishlistSvg} from './tabs/WishlistSvg';
 
 export const svg = {
+  AdminNavProductsSvg,
+  AdminSidebarGiftSvg,
+  AdminSidebarListSvg,
+  AdminSidebarTruckSvg,
   BagSvg,
   WaySvg,
   HomeSvg,
@@ -86,14 +91,11 @@ export const svg = {
   BasketSvg,
   SearchSvg,
   MapPinSvg,
-  GoogleSvg,
   EyeOffSvg,
   GoBackSvg,
   LogOutSvg,
   FiltersSvg,
-  TwitterSvg,
   ProfileSvg,
-  FaceBookSvg,
   CalendarSvg,
   AgeCheckSvg,
   CanceledSvg,

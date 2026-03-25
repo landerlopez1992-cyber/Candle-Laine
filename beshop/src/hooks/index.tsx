@@ -9,6 +9,7 @@ import {ThunkDispatch} from 'redux-thunk';
 // API hooks
 import {useOrders} from './useOrders';
 import {useProducts} from './useProducts';
+import {useProductReviews} from './useProductReviews';
 import {useUniqueTags} from './useUniqueTags';
 import {usePromocodes} from './usePromocodes';
 
@@ -25,6 +26,7 @@ export const useLocation = () => useLocationRedux();
 export const hooks = {
   useOrders,
   useProducts,
+  useProductReviews,
   useNavigate,
   useDispatch,
   useLocation,

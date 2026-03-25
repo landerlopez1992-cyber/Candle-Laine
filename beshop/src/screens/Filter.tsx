@@ -14,17 +14,18 @@ import {setSelectedColors} from '../store/slices/filterSlice';
 import {setSelectedCategories} from '../store/slices/filterSlice';
 
 import type {ColorType} from '../types';
+import { APP_PALETTE } from '../theme/appPalette';
 
 const labels = ['sale', 'top', 'new'];
 
 export const Filter: React.FC = () => {
   const dispatch = useDispatch<ThunkDispatch<RootState, void, Action>>();
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const {productsLoading, products} = hooks.useProducts();
@@ -83,7 +84,7 @@ export const Filter: React.FC = () => {
       <components.Header
         title='Filter'
         showGoBack={true}
-        headerStyle={{backgroundColor: '#FCEDEA'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
       />
     );
   };

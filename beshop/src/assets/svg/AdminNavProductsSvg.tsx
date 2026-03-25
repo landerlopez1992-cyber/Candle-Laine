@@ -1,0 +1,32 @@
+import * as React from 'react';
+
+/** Bolsa en círculo rosa (#FFF2F5), mismo criterio que MailSvg — solo navegación admin. */
+export const AdminNavProductsSvg: React.FC = () => {
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width={40}
+      height={40}
+      fill='none'
+    >
+      <rect
+        width={40}
+        height={40}
+        fill='#FFF2F5'
+        rx={20}
+      />
+      <svg
+        x={11}
+        y={11}
+        width={18}
+        height={17}
+        viewBox='0 0 14 13'
+      >
+        <path
+          fill='#FF4768'
+          d='M2.477 12.595a.41.41 0 0 0 .394.298h8.258a.41.41 0 0 0 .394-.298l1.556-5.444H.92l1.556 5.444Zm6.402-1.82.41-2.461a.41.41 0 1 1 .809.135l-.41 2.46a.41.41 0 0 1-.81-.134ZM6.589 8.38a.41.41 0 0 1 .821 0v2.461a.41.41 0 1 1-.82 0v-2.46Zm-2.322-.404a.41.41 0 0 1 .472.337l.41 2.46a.41.41 0 1 1-.81.136l-.41-2.461a.41.41 0 0 1 .338-.472ZM13.59 4.69h-1.444L8.988.742a.41.41 0 0 0-.64.513l2.748 3.435H2.904l2.748-3.435a.41.41 0 0 0-.64-.513L1.854 4.69H.41A.41.41 0 0 0 0 5.1v.82c0 .227.184.41.41.41h13.18a.41.41 0 0 0 .41-.41V5.1a.41.41 0 0 0-.41-.41Z'
+        />
+      </svg>
+    </svg>
+  );
+};

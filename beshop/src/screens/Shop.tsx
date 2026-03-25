@@ -10,6 +10,7 @@ import {ProductType} from '../types';
 import {components} from '../components';
 import {actions} from '../store/actions';
 import {useProducts} from '../hooks/useProducts';
+import { APP_PALETTE } from '../theme/appPalette';
 
 const sortingBy = [
   {id: 1, title: 'Sale'},
@@ -23,7 +24,8 @@ export const Shop: React.FC = () => {
   const location = hooks.useLocation();
 
   const category = location.state?.category;
-  const {productsLoading, products} = useProducts();
+  const categoryId = location.state?.categoryId as string | undefined;
+  const {productsLoading, products} = useProducts(categoryId);
 
   const navigate = hooks.useNavigate();
   const dispatch = hooks.useDispatch();
@@ -31,11 +33,11 @@ export const Shop: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [sort, setSort] = useState<string>(sortingBy[0].title);
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const {selectedColors, selectedCategories, selectedTags} = useSelector(
@@ -76,7 +78,7 @@ export const Shop: React.FC = () => {
         showBasket={true}
         title={category || 'Shop'}
         headerStyle={{
-          backgroundColor: '#FCEDEA',
+          backgroundColor: APP_PALETTE.headerBand,
         }}
       />
     );

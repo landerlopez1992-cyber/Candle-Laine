@@ -1,5 +1,6 @@
 export type ReviewType = {
-  id: number;
+  /** UUID en Supabase o identificador estable en cliente */
+  id: string;
   name: string;
   rating: number;
   comment?: string;

@@ -7,17 +7,18 @@ import {RootState} from '../../store';
 import {ProductType} from '../../types';
 import {actions} from '../../store/actions';
 import {components} from '../../components';
+import { APP_PALETTE } from '../../theme/appPalette';
 
 export const Wishlist: React.FC = () => {
   const dispatch = hooks.useDispatch();
 
   const wishlist = useSelector((state: RootState) => state.wishlistSlice);
 
-  hooks.useThemeColor('#FCEDEA');
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#FCEDEA'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const renderHeader = (): JSX.Element => {
@@ -27,7 +28,7 @@ export const Wishlist: React.FC = () => {
         showBasket={true}
         showLogo={true}
         headerStyle={{
-          backgroundColor: '#FCEDEA',
+          backgroundColor: APP_PALETTE.headerBand,
         }}
       />
     );

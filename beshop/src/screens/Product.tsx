@@ -1,4 +1,4 @@
-import React, {useRef, useState, useEffect} from 'react';
+import React, {useRef, useState, useEffect, useMemo} from 'react';
 import {Swiper, SwiperSlide} from 'swiper/react';
 import SwiperCore from 'swiper';
 import {useSelector} from 'react-redux';
@@ -7,16 +7,19 @@ import {Swiper as SwiperType} from 'swiper';
 import {items} from '../items';
 import {hooks} from '../hooks';
 import {svg} from '../assets/svg';
-import {ColorType} from '../types';
+import {ColorType, ProductType, ReviewType} from '../types';
 import {RootState} from '../store';
-import {ReviewType} from '../types';
 import {actions} from '../store/actions';
 import {components} from '../components';
-import {useReviews} from '../hooks/useReviews';
+import {useProductReviews} from '../hooks/useProductReviews';
 import {addToCart} from '../store/slices/cartSlice';
 import {removeFromCart} from '../store/slices/cartSlice';
 import {addToWishlist} from '../store/slices/wishlistSlice';
 import {removeFromWishlist} from '../store/slices/wishlistSlice';
+import {APP_PALETTE} from '../theme/appPalette';
+import {Routes} from '../enums';
+import {isUuid} from '../utils/isUuid';
+import {LEAVE_REVIEW_PRODUCT_ID_KEY} from '../constants/leaveReviewStorage';
 
 export const Product: React.FC = () => {
   const dispatch = hooks.useDispatch();
@@ -24,33 +27,67 @@ export const Product: React.FC = () => {
 
   const cart = useSelector((state: RootState) => state.cartSlice);
 
-  const {reviewsLoading, reviews} = useReviews();
   const location = hooks.useLocation();
+  const product = (location.state as {product?: ProductType} | null)?.product;
+
+  const productIdForReviews =
+    product && typeof product.id === 'string' && isUuid(product.id)
+      ? product.id
+      : undefined;
+
+  const {
+    reviews,
+    reviewsLoading,
+    averageRating,
+    reviewCount,
+    reviewsError,
+  } = useProductReviews(productIdForReviews);
 
   const swiperRef = useRef<SwiperCore | null>(null);
 
-  const product = location.state.product;
-
-  const isLoading = reviewsLoading || !product;
-
   const [activeSlide, setActiveSlide] = useState(0);
-  const [selectedColor, setSelectedColor] = useState<string>(
-    product.colors?.[1].name,
-  );
+  const [selectedColor, setSelectedColor] = useState('');
+
+  useEffect(() => {
+    if (!product) {
+      return;
+    }
+    const c =
+      product.colors?.[1]?.name ?? product.colors?.[0]?.name ?? '';
+    if (c) {
+      setSelectedColor(c);
+    }
+  }, [product]);
 
   const wishlist = useSelector((state: RootState) => state.wishlistSlice);
-  const ifInWishlist = wishlist.list.find((item) => item.id === product.id);
+  const ifInWishlist = product
+    ? wishlist.list.find((item) => item.id === product.id)
+    : undefined;
 
-  const updatedProduct = {
-    ...product,
-    color: selectedColor,
-  };
+  const updatedProduct = useMemo(
+    () =>
+      product
+        ? {
+            ...product,
+            color: selectedColor,
+          }
+        : null,
+    [product, selectedColor],
+  );
 
-  hooks.useThemeColor('#fff');
+  const productForRating = useMemo(() => {
+    if (!product) {
+      return null;
+    }
+    const r = averageRating ?? product.rating;
+    return {...product, rating: r};
+  }, [product, averageRating]);
+
+  hooks.useThemeColor(APP_PALETTE.appShell);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    dispatch(actions.setColor('#fff'));
+    dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
   const handleSlideChange = (swiper: SwiperType) => {
@@ -61,6 +98,9 @@ export const Product: React.FC = () => {
     event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => {
     event.stopPropagation();
+    if (!product) {
+      return;
+    }
     if (ifInWishlist) {
       dispatch(removeFromWishlist(product));
     } else {
@@ -81,6 +121,9 @@ export const Product: React.FC = () => {
   };
 
   const renderCarousel = (): JSX.Element => {
+    if (!product) {
+      return <></>;
+    }
     return (
       <section style={{marginBottom: 20, marginTop: 4, position: 'relative'}}>
         <Swiper
@@ -137,6 +180,9 @@ export const Product: React.FC = () => {
   };
 
   const renderNameWithButton = (): JSX.Element => {
+    if (!product) {
+      return <></>;
+    }
     return (
       <section
         className='container row-center-space-between'
@@ -154,6 +200,9 @@ export const Product: React.FC = () => {
   };
 
   const renderRatingWithStatus = (): JSX.Element => {
+    if (!productForRating) {
+      return <></>;
+    }
     return (
       <div
         style={{marginBottom: 3, gap: 10}}
@@ -166,7 +215,7 @@ export const Product: React.FC = () => {
           In Stock
         </span>
         <components.Rating
-          product={product}
+          product={productForRating}
           containerStyle={{marginBottom: 1}}
         />
       </div>
@@ -174,6 +223,9 @@ export const Product: React.FC = () => {
   };
 
   const renderPriceWithCounter = (): JSX.Element => {
+    if (!product) {
+      return <></>;
+    }
     const ifProductInCart = cart.list.find((item) => item.id === product.id);
     const qty = ifProductInCart ? ifProductInCart.quantity : 0;
     return (
@@ -226,6 +278,9 @@ export const Product: React.FC = () => {
   };
 
   const renderColors = (): JSX.Element => {
+    if (!product) {
+      return <></>;
+    }
     return (
       <section
         className='row-center'
@@ -274,6 +329,9 @@ export const Product: React.FC = () => {
   };
 
   const renderDescription = (): JSX.Element => {
+    if (!product) {
+      return <></>;
+    }
     return (
       <section
         style={{
@@ -296,6 +354,9 @@ export const Product: React.FC = () => {
   };
 
   const renderButton = (): JSX.Element => {
+    if (!updatedProduct) {
+      return <></>;
+    }
     return (
       <div
         className='container'
@@ -315,34 +376,111 @@ export const Product: React.FC = () => {
   };
 
   const renderReviews = (): JSX.Element => {
+    if (!product) {
+      return <></>;
+    }
+    const count = productIdForReviews ? reviewCount : reviews.length;
+    const canReview =
+      Boolean(productIdForReviews) && isUuid(String(product.id));
+
     return (
       <section
         style={{marginBottom: 30}}
         className='container'
       >
         <components.BlockHeading
-          title={`Reviews (${reviews?.length})`}
+          title={`Reviews (${count})`}
           containerStyle={{marginBottom: 18}}
-          viewAllOnClick={() => navigate('/reviews')}
+          viewAllVisible={canReview}
+          viewAllOnClick={
+            canReview
+              ? () =>
+                  navigate(Routes.Reviews, {
+                    state: {productId: String(product.id)},
+                  })
+              : undefined
+          }
         />
-        {reviews
-          ?.slice(0, 2)
-          .map((review: ReviewType, index: number, array: ReviewType[]) => {
-            const isLast = index === array.length - 1;
-            return (
-              <items.ReviewItem
-                key={review.id}
-                review={review}
-                isLast={isLast}
-              />
-            );
-          })}
+        {reviewsError && (
+          <p
+            className='t12'
+            style={{color: APP_PALETTE.accent, marginBottom: 8}}
+          >
+            {reviewsError}
+          </p>
+        )}
+        {canReview && (
+          <div style={{marginBottom: 14}}>
+            <button
+              type='button'
+              className='t14 clickable'
+              style={{
+                color: 'var(--accent-color)',
+                fontWeight: 600,
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                try {
+                  sessionStorage.setItem(
+                    LEAVE_REVIEW_PRODUCT_ID_KEY,
+                    String(product.id),
+                  );
+                } catch {
+                  /* private mode / quota */
+                }
+                navigate(Routes.LeaveAReviews, {
+                  state: {
+                    productId: String(product.id),
+                    productName: product.name,
+                    productImage: product.images?.[0] ?? product.image,
+                  },
+                });
+              }}
+            >
+              Write a review
+            </button>
+          </div>
+        )}
+        {reviews?.slice(0, 2).map((review: ReviewType, index: number, array: ReviewType[]) => {
+          const isLast = index === array.length - 1;
+          return (
+            <items.ReviewItem
+              key={review.id}
+              review={review}
+              isLast={isLast}
+            />
+          );
+        })}
       </section>
     );
   };
 
   const renderContent = (): JSX.Element => {
-    if (isLoading) return <components.Loader />;
+    if (reviewsLoading) {
+      return <components.Loader />;
+    }
+    if (!product) {
+      return (
+        <main
+          className='scrollable container'
+          style={{paddingTop: 24, paddingBottom: 24}}
+        >
+          <p
+            className='t16'
+            style={{marginBottom: 16, color: APP_PALETTE.textOnDark}}
+          >
+            No product to show. Open a product from the shop.
+          </p>
+          <components.Button
+            text='Back'
+            onClick={() => navigate(-1)}
+          />
+        </main>
+      );
+    }
 
     return (
       <main className='scrollable'>

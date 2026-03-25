@@ -1,14 +1,25 @@
 :root {
-  // Colors
-  --white-color: #fff;
-  --text-color: #666666;
-  --main-color: #222222;
-  --pastel-color: #fcedea;
-  --accent-color: #d05278;
-  --border-color: #eeeeee;
-  --main-background: #f5fafb;
-  --input-background: #fbf8f2;
-  --image-background: #f7f7fd;
+  // —— Paleta oficial Candle Laine (global) ——
+  // Tarjetas, inputs, superficies tipo “papel”
+  --white-color: #ffffff;
+  /** Barra inferior de navegación (tabs) */
+  --footer-bar: #4b3c35;
+  --text-color: #b8a894;
+  --main-color: #d6c0a5;
+  --pastel-color: #926d50;
+  --accent-color: #f1b97f;
+  --tab-active-pill: #545953;
+  --border-color: #545953;
+  --main-background: #1c2d18;
+  --input-background: #4b3c35;
+  --image-background: #ffffff;
+  --sale-badge-bg: #4c775c;
+  --price-muted: #9a8b7a;
+  --star-color: #f1b97f;
+  /** Filas de lista / tarjetas sobre el fondo verde oscuro */
+  --list-row-bg: #545953;
+  /** Texto sobre superficies claras (inputs blancos si se usan) */
+  --text-on-light: #3a2e28;
 
   // Header and bottom bar
   --header-height: 50px;
