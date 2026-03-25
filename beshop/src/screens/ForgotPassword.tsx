@@ -4,9 +4,21 @@ import {hooks} from '../hooks';
 import {custom} from '../custom';
 import {actions} from '../store/actions';
 import {components} from '../components';
+import {APP_PALETTE} from '../theme/appPalette';
 
-import background from '../assets/bg/07.png';
-import { APP_PALETTE } from '../theme/appPalette';
+const cardSurface: React.CSSProperties = {
+  backgroundColor: APP_PALETTE.cartCardSurface,
+  borderRadius: 12,
+  border: `1px solid ${APP_PALETTE.border}`,
+  padding: '24px 20px',
+};
+
+const inputWrap: React.CSSProperties = {
+  marginBottom: 16,
+  borderRadius: 8,
+  backgroundColor: APP_PALETTE.inputSurface,
+  border: `1px solid ${APP_PALETTE.border}`,
+};
 
 export const ForgotPassword: React.FC = () => {
   const dispatch = hooks.useDispatch();
@@ -23,46 +35,53 @@ export const ForgotPassword: React.FC = () => {
       <components.Header
         title='Forgot Password'
         showGoBack={true}
-        headerStyle={{backgroundColor: 'var(--white-color)'}}
+        headerStyle={{backgroundColor: APP_PALETTE.headerBand}}
       />
     );
   };
 
   const renderContent = (): JSX.Element => {
     return (
-      <main className='scrollable'>
+      <main
+        className='scrollable'
+        style={{
+          backgroundColor: APP_PALETTE.appShell,
+          paddingTop: 16,
+          paddingBottom: 28,
+          minHeight: 'calc(100vh - 120px)',
+          boxSizing: 'border-box',
+        }}
+      >
         <div
           style={{
-            backgroundImage: `url(${background})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            marginTop: 16,
             marginLeft: 20,
             marginRight: 20,
-            marginBottom: 20,
-            paddingBottom: 30,
-            paddingLeft: 20,
-            paddingRight: 20,
-            paddingTop: 30,
           }}
         >
-          <p
-            className='t16'
-            style={{marginBottom: 30}}
-          >
-            Please enter your email address. You will receive a link to create a
-            new password via email.
-          </p>
-          <custom.InputField
-            placeholder='kristinwatson@mail.com'
-            containerStyle={{
-              marginBottom: 16,
-            }}
-          />
-          <components.Button
-            text='send'
-            to='/new-password'
-          />
+          <div style={cardSurface}>
+            <p
+              className='t16'
+              style={{
+                marginBottom: 24,
+                marginTop: 0,
+                color: 'var(--text-on-light)',
+                lineHeight: 1.55,
+              }}
+            >
+              Please enter your email address. You will receive a link to create a
+              new password via email.
+            </p>
+            <custom.InputField
+              placeholder='Email address'
+              containerStyle={inputWrap}
+              autoComplete='email'
+              inputMode='email'
+            />
+            <components.Button
+              text='send'
+              to='/new-password'
+            />
+          </div>
         </div>
       </main>
     );

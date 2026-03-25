@@ -35,7 +35,7 @@ export const VerifyYourPhoneNumber: React.FC = () => {
     setError(null);
     if (!isSupabaseConfigured) {
       setError(
-        'Supabase no está configurado en esta compilación. En la carpeta beshop crea .env.local con REACT_APP_SUPABASE_URL y REACT_APP_SUPABASE_ANON_KEY (Dashboard → Settings → API), guarda, detén npm start y vuelve a ejecutarlo.',
+        'Supabase is not configured for this build. In the beshop folder, create .env.local with REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY (Dashboard → Settings → API), save, stop npm start, and run it again.',
       );
       return;
     }
@@ -50,17 +50,17 @@ export const VerifyYourPhoneNumber: React.FC = () => {
     if (!result.ok) {
       const map: Record<string, string> = {
         twilio_not_configured:
-          'Twilio no está configurado en Supabase (secrets de la función).',
+          'Twilio is not configured in Supabase (function secrets).',
         invalid_phone_format:
-          'Formato de teléfono no válido. Usa +1 y el número completo.',
-        invalid_json: 'Petición inválida. Recarga la página e inténtalo de nuevo.',
-        empty_body: 'Petición vacía. Recarga la página e inténtalo de nuevo.',
+          'Invalid phone format. Use +1 and the full number.',
+        invalid_json: 'Invalid request. Reload the page and try again.',
+        empty_body: 'Empty request. Reload the page and try again.',
         database_error:
-          'Error al guardar el código. ¿Ejecutaste el SQL de phone_verifications en Supabase?',
+          'Could not save the code. Did you run the phone_verifications SQL in Supabase?',
         sms_send_failed:
-          'Twilio rechazó el SMS. Revisa el número en Twilio y el saldo de la cuenta.',
+          'Twilio rejected the SMS. Check the number in Twilio and your account balance.',
         supabase_not_configured:
-          'Supabase no está en las variables de entorno. Revisa beshop/.env.local y reinicia npm start.',
+          'Supabase is missing from the environment. Check beshop/.env.local and restart npm start.',
       };
       setError(map[result.error ?? ''] ?? result.error ?? 'Could not send SMS. Try again.');
       return;

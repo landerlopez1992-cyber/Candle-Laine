@@ -37,14 +37,9 @@ serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
-  const stripeClientId = Deno.env.get('STRIPE_CONNECT_CLIENT_ID') ?? '';
 
   if (!supabaseUrl || !anonKey || !serviceKey) {
     return jsonResponse({ok: false, error: 'server_misconfigured'}, 500);
-  }
-  if (!stripeSecret || !stripeClientId) {
-    return jsonResponse({ok: false, error: 'stripe_env_missing'}, 500);
   }
 
   const authHeader = req.headers.get('Authorization');
@@ -65,9 +60,9 @@ serve(async (req) => {
   if (!rawText?.trim()) {
     return jsonResponse({ok: false, error: 'empty_body'}, 400);
   }
-  let body: {code?: string};
+  let body: {code?: string; mode?: string};
   try {
-    body = JSON.parse(rawText) as {code?: string};
+    body = JSON.parse(rawText) as {code?: string; mode?: string};
   } catch {
     return jsonResponse({ok: false, error: 'invalid_json'}, 400);
   }
@@ -75,6 +70,46 @@ serve(async (req) => {
   const code = typeof body.code === 'string' ? body.code.trim() : '';
   if (!code) {
     return jsonResponse({ok: false, error: 'missing_code'}, 400);
+  }
+
+  // mode: 'test' | 'live' — determina qué credenciales usar y dónde guardar el acct_...
+  const isTestMode = body.mode !== 'live';
+
+  const admin = createClient(supabaseUrl, serviceKey);
+  const {data: runtimeData, error: runtimeErr} = await admin
+    .from('shop_stripe_runtime')
+    .select(
+      'use_test_mode, connect_client_id_test, connect_client_id_live, secret_key_test, secret_key_live',
+    )
+    .eq('id', 'default')
+    .maybeSingle();
+
+  if (runtimeErr || !runtimeData) {
+    console.error(runtimeErr);
+    return jsonResponse({ok: false, error: 'stripe_runtime_missing'}, 500);
+  }
+
+  const stripeClientId = String(
+    isTestMode
+      ? runtimeData.connect_client_id_test ?? ''
+      : runtimeData.connect_client_id_live ?? '',
+  ).trim();
+  const stripeSecret = String(
+    isTestMode
+      ? runtimeData.secret_key_test ?? ''
+      : runtimeData.secret_key_live ?? '',
+  ).trim();
+
+  if (!stripeClientId || !stripeSecret) {
+    return jsonResponse(
+      {
+        ok: false,
+        error: isTestMode
+          ? 'stripe_test_credentials_missing'
+          : 'stripe_live_credentials_missing',
+      },
+      400,
+    );
   }
 
   const params = new URLSearchParams();
@@ -95,30 +130,37 @@ serve(async (req) => {
       tokenJson.error_description ??
       tokenJson.error ??
       'stripe_token_exchange_failed';
-    return jsonResponse(
-      {ok: false, error: msg},
-      400,
-    );
+    return jsonResponse({ok: false, error: msg}, 400);
   }
 
-  const admin = createClient(supabaseUrl, serviceKey);
-  const {error: upError} = await admin
-    .from('shop_payment_settings')
-    .update({
-      stripe_connect_account_id: tokenJson.stripe_user_id,
-      stripe_livemode: Boolean(tokenJson.livemode),
-      stripe_enabled: true,
-    })
+  // Guardar account_id en la columna del modo correspondiente (test o live).
+  const accountField = isTestMode ? 'account_id_test' : 'account_id_live';
+  const {error: runtimeUpError} = await admin
+    .from('shop_stripe_runtime')
+    .update({[accountField]: tokenJson.stripe_user_id})
     .eq('id', 'default');
 
-  if (upError) {
-    console.error(upError);
+  if (runtimeUpError) {
+    console.error(runtimeUpError);
     return jsonResponse({ok: false, error: 'db_update_failed'}, 500);
+  }
+
+  // Sincronizar shop_payment_settings con el modo actualmente activo.
+  const isCurrentMode = isTestMode === Boolean(runtimeData.use_test_mode);
+  if (isCurrentMode) {
+    await admin
+      .from('shop_payment_settings')
+      .update({
+        stripe_connect_account_id: tokenJson.stripe_user_id,
+        stripe_livemode: !isTestMode,
+        stripe_enabled: true,
+      })
+      .eq('id', 'default');
   }
 
   return jsonResponse({
     ok: true,
     stripe_connect_account_id: tokenJson.stripe_user_id,
-    livemode: Boolean(tokenJson.livemode),
+    mode: isTestMode ? 'test' : 'live',
   });
 });

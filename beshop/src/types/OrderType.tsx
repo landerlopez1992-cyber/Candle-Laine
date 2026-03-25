@@ -15,4 +15,6 @@ export type OrderType = {
     | 'paid';
   total: number;
   products: ProductType[];
+  /** Desde `orders.metadata.payment_method_display` (ej. VISA •••• 1111, Zelle). */
+  paymentMethodDisplay?: string | null;
 };

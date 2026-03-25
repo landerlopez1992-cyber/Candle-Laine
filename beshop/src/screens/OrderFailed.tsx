@@ -9,6 +9,8 @@ import { APP_PALETTE } from '../theme/appPalette';
 
 export const OrderFailed: React.FC = () => {
   const dispatch = hooks.useDispatch();
+  const location = hooks.useLocation();
+  const reason = (location.state as {reason?: string} | null)?.reason ?? '';
 
   const navigate = hooks.useNavigate();
 
@@ -54,6 +56,14 @@ export const OrderFailed: React.FC = () => {
             Something went wrong. Please try again <br /> to contimue your
             order.
           </p>
+          {reason ? (
+            <p
+              className='t14'
+              style={{textAlign: 'center', marginBottom: 20, color: APP_PALETTE.accent}}
+            >
+              Stripe: {reason}
+            </p>
+          ) : null}
           <components.Button
             text='try again'
             onClick={() => {

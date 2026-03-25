@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {generatePath} from 'react-router-dom';
 
 import {hooks} from '../../hooks';
@@ -103,6 +103,9 @@ export const AdminProductsPanel: React.FC = () => {
   const [flagHot, setFlagHot] = useState(false);
   const [flagNew, setFlagNew] = useState(false);
   const [prodFiles, setProdFiles] = useState<File[]>([]);
+  /** Formulario de alta/edición: oculto por defecto para ver solo el listado. */
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
@@ -177,12 +180,72 @@ export const AdminProductsPanel: React.FC = () => {
   }, [categories, prodCategory]);
 
   useEffect(() => {
-    setProdSubcat('');
-  }, [prodCategory]);
-
-  useEffect(() => {
     setEditingSubcategoryId(null);
   }, [subCatParent]);
+
+  useEffect(() => {
+    if (innerTab !== 'products') {
+      setShowProductForm(false);
+      setEditingProductId(null);
+    }
+  }, [innerTab]);
+
+  const resetProductFormFields = useCallback(() => {
+    setProdName('');
+    setProdDetails('');
+    setProdPrice('');
+    setProdCompare('');
+    setProdWeight('');
+    setProdStock('0');
+    setFlagDiscount(false);
+    setFlagOffer(false);
+    setFlagHot(false);
+    setFlagNew(false);
+    setProdFiles([]);
+    setEditingProductId(null);
+    setProdSubcat('');
+  }, []);
+
+  const closeProductForm = useCallback(() => {
+    resetProductFormFields();
+    setShowProductForm(false);
+  }, [resetProductFormFields]);
+
+  const openCreateProduct = useCallback(() => {
+    resetProductFormFields();
+    setShowProductForm(true);
+  }, [resetProductFormFields]);
+
+  const beginEditProduct = useCallback((p: ShopProduct) => {
+    setEditingProductId(p.id);
+    setProdCategory(p.category_id);
+    setProdSubcat(p.subcategory_id != null ? String(p.subcategory_id) : '');
+    setProdName(p.name);
+    setProdDetails(p.details ?? '');
+    setProdPrice(centsToDollars(p.price_cents));
+    setProdCompare(
+      p.compare_at_price_cents != null
+        ? centsToDollars(p.compare_at_price_cents)
+        : '',
+    );
+    setProdWeight(p.weight_grams != null ? String(p.weight_grams) : '');
+    setProdStock(String(p.stock_quantity ?? 0));
+    setFlagDiscount(Boolean(p.flag_discount));
+    setFlagOffer(Boolean(p.flag_offer));
+    setFlagHot(Boolean(p.flag_hot));
+    setFlagNew(Boolean(p.flag_new));
+    setProdFiles([]);
+    setShowProductForm(true);
+  }, []);
+
+  /** Fila actual en listado (para miniaturas al editar; se actualiza tras guardar). */
+  const productBeingEdited = useMemo(
+    () =>
+      editingProductId
+        ? products.find((pr) => pr.id === editingProductId) ?? null
+        : null,
+    [editingProductId, products],
+  );
 
   const addCategory = async () => {
     if (!supabase || !catName.trim()) {
@@ -483,18 +546,104 @@ export const AdminProductsPanel: React.FC = () => {
       setError(null);
     }
 
-    setProdName('');
-    setProdDetails('');
-    setProdPrice('');
-    setProdCompare('');
-    setProdWeight('');
-    setProdStock('0');
-    setFlagDiscount(false);
-    setFlagOffer(false);
-    setFlagHot(false);
-    setFlagNew(false);
-    setProdFiles([]);
+    closeProductForm();
     await loadProducts();
+  };
+
+  const updateProduct = async () => {
+    if (!supabase || !editingProductId) {
+      return;
+    }
+    if (!prodName.trim()) {
+      setError('Indica el nombre del producto.');
+      return;
+    }
+    if (!prodCategory) {
+      setError('Elige una categoría.');
+      return;
+    }
+    const subId = prodSubcat.trim() || null;
+    if (subId) {
+      const sub = subcategories.find((s) => s.id === subId);
+      if (!sub || sub.category_id !== prodCategory) {
+        setError('La subcategoría no corresponde a la categoría elegida.');
+        return;
+      }
+    }
+    setError(null);
+    const priceCents = dollarsToCents(prodPrice);
+    const compareCents = prodCompare.trim()
+      ? dollarsToCents(prodCompare)
+      : null;
+    const weightParsed = prodWeight.trim()
+      ? parseInt(prodWeight, 10)
+      : NaN;
+    const weightGrams = Number.isFinite(weightParsed) ? weightParsed : null;
+    const stock = parseInt(prodStock, 10) || 0;
+
+    const {error: e} = await supabase
+      .from('shop_products')
+      .update({
+        category_id: prodCategory,
+        subcategory_id: subId,
+        name: prodName.trim(),
+        details: prodDetails.trim() || null,
+        price_cents: priceCents,
+        compare_at_price_cents: compareCents,
+        weight_grams: weightGrams,
+        stock_quantity: stock,
+        flag_discount: flagDiscount,
+        flag_offer: flagOffer,
+        flag_hot: flagHot,
+        flag_new: flagNew,
+      })
+      .eq('id', editingProductId);
+
+    if (e) {
+      setError(formatSupabaseError(e));
+      return;
+    }
+
+    const pid = editingProductId;
+    const existingPaths =
+      products.find((row) => row.id === pid)?.image_paths ?? [];
+    const paths: string[] = [...existingPaths];
+    let uploadErr: string | null = null;
+    for (const f of prodFiles) {
+      const {path, error: upErr} = await uploadShopImage(`products/${pid}`, f);
+      if (upErr) {
+        uploadErr = formatSupabaseError(upErr);
+        break;
+      }
+      paths.push(path);
+    }
+    if (prodFiles.length && !uploadErr) {
+      const {error: upDb} = await supabase
+        .from('shop_products')
+        .update({image_paths: paths})
+        .eq('id', pid);
+      if (upDb) {
+        uploadErr = formatSupabaseError(upDb);
+      }
+    }
+    if (uploadErr) {
+      setError(
+        `Producto actualizado. ${prodFiles.length ? 'Algunas imágenes no se pudieron subir' : ''}: ${uploadErr}`,
+      );
+    } else {
+      setError(null);
+    }
+
+    closeProductForm();
+    await loadProducts();
+  };
+
+  const saveProduct = async () => {
+    if (editingProductId) {
+      await updateProduct();
+    } else {
+      await addProduct();
+    }
   };
 
   const deleteProduct = async (id: string) => {
@@ -984,22 +1133,57 @@ export const AdminProductsPanel: React.FC = () => {
 
       {innerTab === 'products' && (
         <div>
-          <h2
+          <div
             style={{
-              fontFamily: 'League Spartan, sans-serif',
-              fontSize: 20,
-              color: APP_PALETTE.textOnDark,
-              marginBottom: 16,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginBottom: 20,
             }}
           >
-            Nuevo producto
-          </h2>
-          <div style={{...card, maxWidth: 640}}>
+            <h2
+              style={{
+                fontFamily: 'League Spartan, sans-serif',
+                fontSize: 20,
+                color: APP_PALETTE.textOnDark,
+                margin: 0,
+              }}
+            >
+              Listado de productos
+            </h2>
+            <button
+              type='button'
+              onClick={() => openCreateProduct()}
+              style={btnPrimary}
+              disabled={!categories.length}
+            >
+              Agregar producto
+            </button>
+          </div>
+
+          {showProductForm && (
+            <>
+              <h2
+                style={{
+                  fontFamily: 'League Spartan, sans-serif',
+                  fontSize: 20,
+                  color: APP_PALETTE.textOnDark,
+                  marginBottom: 16,
+                }}
+              >
+                {editingProductId ? 'Editar producto' : 'Nuevo producto'}
+              </h2>
+              <div style={{...card, maxWidth: 640}}>
             <label style={labelStyle}>Categoría</label>
             <select
               style={{...inputStyle, marginBottom: 8, maxWidth: '100%'}}
               value={prodCategory}
-              onChange={(e) => setProdCategory(e.target.value)}
+              onChange={(e) => {
+                setProdCategory(e.target.value);
+                setProdSubcat('');
+              }}
             >
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -1065,6 +1249,53 @@ export const AdminProductsPanel: React.FC = () => {
             />
 
             <label style={labelStyle}>Fotos (varias)</label>
+            {editingProductId &&
+              (productBeingEdited?.image_paths?.length ?? 0) > 0 && (
+                <div style={{marginBottom: 12}}>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: APP_PALETTE.textMuted,
+                      margin: '0 0 8px',
+                    }}
+                  >
+                    Fotos actuales en la tienda:
+                  </p>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}
+                  >
+                    {(productBeingEdited?.image_paths ?? []).map((path) => (
+                      <img
+                        key={path}
+                        alt=''
+                        src={getShopMediaPublicUrl(path)}
+                        style={{
+                          width: 72,
+                          height: 72,
+                          objectFit: 'cover',
+                          borderRadius: 8,
+                          border: `1px solid ${APP_PALETTE.border}`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            {editingProductId && (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: APP_PALETTE.textMuted,
+                  margin: '0 0 8px',
+                }}
+              >
+                Las nuevas fotos se añaden a las ya guardadas.
+              </p>
+            )}
             <input
               type='file'
               accept='image/*'
@@ -1204,26 +1435,34 @@ export const AdminProductsPanel: React.FC = () => {
               </div>
             </div>
 
-            <button
-              type='button'
-              style={btnPrimary}
-              onClick={() => void addProduct()}
-              disabled={!categories.length}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 12,
+                alignItems: 'center',
+              }}
             >
-              Guardar producto
-            </button>
+              <button
+                type='button'
+                style={btnPrimary}
+                onClick={() => void saveProduct()}
+                disabled={!categories.length}
+              >
+                Guardar producto
+              </button>
+              <button
+                type='button'
+                style={btnGhost}
+                onClick={() => closeProductForm()}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
+            </>
+          )}
 
-          <h3
-            style={{
-              fontFamily: 'League Spartan, sans-serif',
-              fontSize: 18,
-              color: APP_PALETTE.textOnDark,
-              margin: '28px 0 12px',
-            }}
-          >
-            Listado de productos
-          </h3>
           {products.map((p) => {
             const cat = categories.find((c) => c.id === p.category_id);
             const sub =
@@ -1243,7 +1482,53 @@ export const AdminProductsPanel: React.FC = () => {
                     alignItems: 'flex-start',
                   }}
                 >
-                  <div style={{display: 'flex', gap: 8, flexWrap: 'wrap'}}>
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    {p.flag_discount && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          width: 52,
+                          height: 52,
+                          overflow: 'hidden',
+                          pointerEvents: 'none',
+                          zIndex: 1,
+                          borderRadius: 8,
+                        }}
+                        aria-hidden
+                      >
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 10,
+                            right: -20,
+                            width: 72,
+                            transform: 'rotate(45deg)',
+                            transformOrigin: 'center',
+                            background: `linear-gradient(115deg, ${APP_PALETTE.accent} 0%, #c9a06c 100%)`,
+                            color: '#1C2D18',
+                            fontFamily: 'League Spartan, sans-serif',
+                            fontSize: 7,
+                            fontWeight: 800,
+                            letterSpacing: 0.6,
+                            textTransform: 'uppercase',
+                            textAlign: 'center',
+                            padding: '4px 0',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                          }}
+                        >
+                          Discount
+                        </div>
+                      </div>
+                    )}
                     {(p.image_paths ?? []).map((path) => (
                       <img
                         key={path}
@@ -1289,13 +1574,33 @@ export const AdminProductsPanel: React.FC = () => {
                         .join(' · ') || 'Sin etiquetas'}
                     </div>
                   </div>
-                  <button
-                    type='button'
-                    style={btnGhost}
-                    onClick={() => void deleteProduct(p.id)}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      flexShrink: 0,
+                    }}
                   >
-                    Eliminar
-                  </button>
+                    <button
+                      type='button'
+                      style={{
+                        ...btnGhost,
+                        borderColor: APP_PALETTE.accent,
+                        color: APP_PALETTE.accent,
+                      }}
+                      onClick={() => beginEditProduct(p)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type='button'
+                      style={btnGhost}
+                      onClick={() => void deleteProduct(p.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               </div>
             );

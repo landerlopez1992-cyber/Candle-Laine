@@ -1,11 +1,22 @@
 import React from 'react';
-import {RouterProvider, createBrowserRouter} from 'react-router-dom';
+import {Outlet, RouterProvider, createBrowserRouter} from 'react-router-dom';
 
 import {Routes} from '../enums';
 import {screens} from '../screens';
+import {BlockedAccountGuard} from './BlockedAccountGuard';
 import {TabNavigator} from './TabNavigator';
 
+const RootLayout: React.FC = () => (
+  <>
+    <BlockedAccountGuard />
+    <Outlet />
+  </>
+);
+
 const stack = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
   {
     path: Routes.SignIn,
     element: <screens.SignIn />,
@@ -47,8 +58,16 @@ const stack = createBrowserRouter([
     element: <screens.CheckoutPaymentMethod />,
   },
   {
+    path: Routes.CheckoutInstallmentsPick,
+    element: <screens.CheckoutInstallmentsPick />,
+  },
+  {
     path: Routes.CheckoutPaymentDetail,
     element: <screens.CheckoutPaymentDetail />,
+  },
+  {
+    path: Routes.CheckoutBnplReturn,
+    element: <screens.CheckoutBnplReturn />,
   },
   {
     path: Routes.TrackYourOrder,
@@ -139,6 +158,10 @@ const stack = createBrowserRouter([
     element: <screens.CheckoutShippingDetails />,
   },
   {
+    path: Routes.CheckoutShippingMethod,
+    element: <screens.CheckoutShippingMethod />,
+  },
+  {
     path: Routes.VerifyYourPhoneNumber,
     element: <screens.VerifyYourPhoneNumber />,
   },
@@ -157,6 +180,12 @@ const stack = createBrowserRouter([
   {
     path: Routes.TabNavigator,
     element: <TabNavigator />,
+  },
+  {
+    path: Routes.AccountBlocked,
+    element: <screens.AccountBlocked />,
+  },
+    ],
   },
 ]);
 

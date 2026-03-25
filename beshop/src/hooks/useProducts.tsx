@@ -2,14 +2,47 @@ import {useState, useEffect} from 'react';
 import axios from 'axios';
 
 import {URLS} from '../config';
-import {supabase} from '../supabaseClient';
+import {isSupabaseConfigured, supabase} from '../supabaseClient';
 import type {ProductType} from '../types';
 import type {ShopProduct} from '../types/catalog';
 import {shopProductToProductType} from '../utils/shopCatalogProduct';
 
+async function mapShopProductsWithRatings(
+  rows: ShopProduct[],
+): Promise<ProductType[]> {
+  if (!supabase || rows.length === 0) {
+    return rows.map((sp) => shopProductToProductType(sp, null));
+  }
+  const ids = rows.map((r) => r.id);
+  const statsById = new Map<
+    string,
+    {avg_rating: number; review_count: number}
+  >();
+  const {data: statRows, error: statErr} = await supabase
+    .from('shop_product_rating_stats')
+    .select('product_id, avg_rating, review_count')
+    .in('product_id', ids);
+  if (!statErr && statRows) {
+    for (const s of statRows as {
+      product_id: string;
+      avg_rating: number;
+      review_count: number;
+    }[]) {
+      statsById.set(s.product_id, {
+        avg_rating: Number(s.avg_rating),
+        review_count: s.review_count,
+      });
+    }
+  }
+  return rows.map((sp) =>
+    shopProductToProductType(sp, statsById.get(sp.id) ?? null),
+  );
+}
+
 /**
- * Sin `categoryId`: productos del JSON demo (comportamiento original).
- * Con `categoryId`: productos reales de `shop_products` filtrados por categoría.
+ * Con Supabase configurado: catálogo real (`shop_products`).
+ * Sin Supabase: JSON demo (comportamiento original).
+ * `categoryId`: opcional; si se pasa, solo esa categoría.
  */
 export const useProducts = (categoryId?: string | null) => {
   const [products, setProducts] = useState<ProductType[]>([]);
@@ -21,13 +54,18 @@ export const useProducts = (categoryId?: string | null) => {
     const load = async () => {
       setProductsLoading(true);
 
-      if (categoryId && supabase) {
+      const useDb = supabase && isSupabaseConfigured;
+
+      if (useDb) {
         try {
-          const {data, error} = await supabase
+          let q = supabase!
             .from('shop_products')
             .select('*')
-            .eq('category_id', categoryId)
             .order('created_at', {ascending: false});
+          if (categoryId) {
+            q = q.eq('category_id', categoryId);
+          }
+          const {data, error} = await q;
 
           if (cancelled) {
             return;
@@ -37,39 +75,8 @@ export const useProducts = (categoryId?: string | null) => {
             console.error(error);
             setProducts([]);
           } else {
-            const rows = data ?? [];
-            const ids = rows.map((r) => (r as ShopProduct).id);
-            const statsById = new Map<
-              string,
-              {avg_rating: number; review_count: number}
-            >();
-            if (ids.length) {
-              const {data: statRows, error: statErr} = await supabase
-                .from('shop_product_rating_stats')
-                .select('product_id, avg_rating, review_count')
-                .in('product_id', ids);
-              if (!statErr && statRows) {
-                for (const s of statRows as {
-                  product_id: string;
-                  avg_rating: number;
-                  review_count: number;
-                }[]) {
-                  statsById.set(s.product_id, {
-                    avg_rating: Number(s.avg_rating),
-                    review_count: s.review_count,
-                  });
-                }
-              }
-            }
-            setProducts(
-              rows.map((row) => {
-                const sp = row as ShopProduct;
-                return shopProductToProductType(
-                  sp,
-                  statsById.get(sp.id) ?? null,
-                );
-              }),
-            );
+            const rows = (data ?? []) as ShopProduct[];
+            setProducts(await mapShopProductsWithRatings(rows));
           }
         } catch (e) {
           console.error(e);

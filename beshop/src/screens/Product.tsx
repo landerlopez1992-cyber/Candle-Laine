@@ -7,7 +7,7 @@ import {Swiper as SwiperType} from 'swiper';
 import {items} from '../items';
 import {hooks} from '../hooks';
 import {svg} from '../assets/svg';
-import {ColorType, ProductType, ReviewType} from '../types';
+import {ProductType, ReviewType} from '../types';
 import {RootState} from '../store';
 import {actions} from '../store/actions';
 import {components} from '../components';
@@ -47,18 +47,6 @@ export const Product: React.FC = () => {
   const carouselActiveImgRef = useRef<HTMLImageElement>(null);
 
   const [activeSlide, setActiveSlide] = useState(0);
-  const [selectedColor, setSelectedColor] = useState('');
-
-  useEffect(() => {
-    if (!product) {
-      return;
-    }
-    const c =
-      product.colors?.[1]?.name ?? product.colors?.[0]?.name ?? '';
-    if (c) {
-      setSelectedColor(c);
-    }
-  }, [product]);
 
   const wishlist = useSelector((state: RootState) => state.wishlistSlice);
   const ifInWishlist = product
@@ -70,10 +58,10 @@ export const Product: React.FC = () => {
       product
         ? {
             ...product,
-            color: selectedColor,
+            color: '',
           }
         : null,
-    [product, selectedColor],
+    [product],
   );
 
   const productForRating = useMemo(() => {
@@ -234,18 +222,30 @@ export const Product: React.FC = () => {
       product.images.length > 0
         ? product.images[activeSlide] ?? product.images[0]
         : product.image;
+    const priceLabel = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(product.price);
     return (
       <div
         className='container row-center-space-between'
-        style={{marginBottom: 20}}
+        style={{
+          marginBottom: 24,
+          paddingBottom: 20,
+          borderBottom: '1px solid rgba(238, 238, 238, 0.35)',
+        }}
       >
         <span
           style={{
-            fontSize: 20,
-            fontFamily: 'Lato',
+            fontSize: 28,
+            fontWeight: 700,
+            fontFamily: 'League Spartan, sans-serif',
+            color: APP_PALETTE.accent,
+            letterSpacing: 0.02,
+            lineHeight: 1.2,
           }}
         >
-          ${product.price}
+          {priceLabel}
         </span>
         <div
           style={{
@@ -285,57 +285,6 @@ export const Product: React.FC = () => {
           </button>
         </div>
       </div>
-    );
-  };
-
-  const renderColors = (): JSX.Element => {
-    if (!product) {
-      return <></>;
-    }
-    return (
-      <section
-        className='row-center'
-        style={{
-          paddingBottom: 20,
-          gap: 20,
-          borderBottom: '1px solid #EEEEEE',
-          marginBottom: 30,
-          marginLeft: 20,
-          marginRight: 20,
-        }}
-      >
-        <h5>Colors</h5>
-        <div
-          style={{
-            gap: 10,
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-          }}
-        >
-          {product.colors.map((color: ColorType, index: number) => {
-            return (
-              <div
-                key={index}
-                style={{
-                  width: 30,
-                  height: 30,
-                  backgroundColor: color.code,
-                  border: `2px solid ${
-                    selectedColor === color.name
-                      ? 'var(--accent-color)'
-                      : color.code
-                  }`,
-                }}
-                className='center clickable'
-                onClick={() => {
-                  setSelectedColor(color.name);
-                }}
-              />
-            );
-          })}
-        </div>
-      </section>
     );
   };
 
@@ -508,7 +457,6 @@ export const Product: React.FC = () => {
         {renderNameWithButton()}
         {renderRatingWithStatus()}
         {renderPriceWithCounter()}
-        {renderColors()}
         {renderDescription()}
         {renderButton()}
         {renderReviews()}

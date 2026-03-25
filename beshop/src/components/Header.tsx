@@ -7,6 +7,8 @@ import {RootState} from '../store';
 import {Screens, Routes} from '../enums';
 import {setScreen} from '../store/slices/tabSlice';
 import {APP_PALETTE} from '../theme/appPalette';
+import {BRAND_CONTACT} from '../config/brandLinks';
+import {getCartCheckoutTotals} from '../utils/cartPaymentTotals';
 
 type Props = {
   title?: string;
@@ -40,7 +42,6 @@ export const Header: React.FC<Props> = ({
   headerStyle,
 }) => {
   const navigate = hooks.useNavigate();
-  const location = hooks.useLocation();
   const dispatch = hooks.useDispatch();
 
   const currentScreen = useSelector(
@@ -53,6 +54,7 @@ export const Header: React.FC<Props> = ({
   hooks.useThemeColor(themeColor);
 
   const cart = useSelector((state: RootState) => state.cartSlice);
+  const cartTotals = getCartCheckoutTotals(cart);
 
   const renderLogo = (): JSX.Element | null => {
     if (!showLogo) return null;
@@ -78,25 +80,41 @@ export const Header: React.FC<Props> = ({
   };
 
   const renderGoBack = (): JSX.Element | null => {
-    if (showGoBack && location.key !== 'default')
-      return (
-        <div
-          onClick={() => navigate(-1)}
-          style={{
-            position: 'absolute',
-            left: 0,
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0 20px',
-          }}
-          className='clickable'
-        >
-          <svg.GoBackSvg />
-        </div>
-      );
-
-    return null;
+    if (!showGoBack) {
+      return null;
+    }
+    return (
+      <div
+        onClick={() => {
+          if (window.history.length > 1) {
+            navigate(-1);
+          } else {
+            dispatch(setScreen(Screens.Profile));
+            navigate(Routes.TabNavigator);
+          }
+        }}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 20px',
+        }}
+        className='clickable'
+        role='button'
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            (e.currentTarget as HTMLDivElement).click();
+          }
+        }}
+      >
+        <svg.GoBackSvg />
+      </div>
+    );
   };
 
   const headerBackground =
@@ -113,10 +131,11 @@ export const Header: React.FC<Props> = ({
         style={{
           position: 'absolute',
           left: '50%',
-          transform: 'translateX(-50%)',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
         }}
       >
-        <h4 style={{marginBottom: 2, color: titleColor}}>{title}</h4>
+        <h4 style={{marginBottom: 0, color: titleColor}}>{title}</h4>
       </div>
     );
   };
@@ -184,7 +203,7 @@ export const Header: React.FC<Props> = ({
               marginBottom: 1,
             }}
           >
-            ${cart.total > 0 ? cart.total.toFixed(2) : '0'}
+            ${cartTotals.grandTotal > 0 ? cartTotals.grandTotal.toFixed(2) : '0'}
           </span>
         </div>
         <svg.BasketSvg />
@@ -260,9 +279,11 @@ export const Header: React.FC<Props> = ({
               }}
             >
               <span className='t18 number-of-lines-1'>
-                27 Division St, New York,
+                {BRAND_CONTACT.addressLine1}
               </span>
-              <span className='t18 number-of-lines-1'>NY 10002, USA</span>
+              <span className='t18 number-of-lines-1'>
+                {BRAND_CONTACT.addressLine2}
+              </span>
             </div>
           </div>
           {/* Email */}
@@ -285,10 +306,7 @@ export const Header: React.FC<Props> = ({
               }}
             >
               <span className='t18 number-of-lines-1'>
-                brainnestsale@mail.com
-              </span>
-              <span className='t18 number-of-lines-1'>
-                brainnestsupport@mail.com
+                {BRAND_CONTACT.email}
               </span>
             </div>
           </div>
@@ -310,8 +328,12 @@ export const Header: React.FC<Props> = ({
                 flexDirection: 'column',
               }}
             >
-              <span className='t18 number-of-lines-1'>+17 123456789</span>
-              <span className='t18 number-of-lines-1'>+17 987654321</span>
+              <span className='t18 number-of-lines-1'>
+                {BRAND_CONTACT.phones[0]}
+              </span>
+              <span className='t18 number-of-lines-1'>
+                {BRAND_CONTACT.phones[1]}
+              </span>
             </div>
           </div>
         </div>
@@ -324,7 +346,9 @@ export const Header: React.FC<Props> = ({
       <header
         style={{
           position: 'relative',
-          height: 'var(--header-height)',
+          minHeight: 'calc(var(--header-height) + env(safe-area-inset-top, 0px))',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          boxSizing: 'border-box',
           backgroundColor: 'var(--main-background)',
           ...headerStyle,
         }}

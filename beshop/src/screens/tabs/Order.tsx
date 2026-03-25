@@ -10,16 +10,25 @@ import {RootState} from '../../store';
 import {ProductType} from '../../types';
 import {components} from '../../components';
 import {actions} from '../../store/actions';
-import { APP_PALETTE } from '../../theme/appPalette';
+import {APP_PALETTE} from '../../theme/appPalette';
+import {supabase} from '../../supabaseClient';
+import {validateAndApplyShopCoupon} from '../../utils/applyShopCoupon';
+import {runCouponSuccessConfetti} from '../../utils/runCouponConfetti';
+import {getCartCheckoutTotals} from '../../utils/cartPaymentTotals';
 
 export const Order: React.FC = () => {
   const dispatch = hooks.useDispatch();
 
-  const [promocodeApplied, setPromocodeApplied] = useState<boolean>(false);
+  const [promoInput, setPromoInput] = useState('');
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applyBusy, setApplyBusy] = useState(false);
+  const [promoSuccessToast, setPromoSuccessToast] = useState(false);
 
   hooks.useThemeColor(APP_PALETTE.appShell);
 
   const cart = useSelector((state: RootState) => state.cartSlice);
+  const orderTotals = getCartCheckoutTotals(cart);
+  const applied = Boolean(cart.promoCode?.trim());
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -61,49 +70,135 @@ export const Order: React.FC = () => {
     );
   };
 
-  const renderPromocode = (): JSX.Element | null => {
-    if (promocodeApplied) {
-      return (
-        <div
-          className='container row-center'
-          style={{gap: 12, marginBottom: '14%'}}
-        >
-          <svg.CheckPromocodeSvg />
-        </div>
-      );
+  const onApplyPromo = async () => {
+    setApplyError(null);
+    if (!supabase) {
+      setApplyError('Sign in to apply a coupon.');
+      return;
     }
+    const {data: auth} = await supabase.auth.getUser();
+    const user = auth?.user;
+    if (!user) {
+      setApplyError('Sign in to apply a coupon.');
+      return;
+    }
+    setApplyBusy(true);
+    const result = await validateAndApplyShopCoupon({
+      code: promoInput,
+      userId: user.id,
+      cart,
+    });
+    setApplyBusy(false);
+    if (!result.ok) {
+      setApplyError(result.message);
+      return;
+    }
+    dispatch(actions.setDiscount(result.discountPercent));
+    dispatch(actions.setPromoCode(result.codeNormalized));
+    setPromoInput('');
+    runCouponSuccessConfetti();
+    setPromoSuccessToast(true);
+    window.setTimeout(() => setPromoSuccessToast(false), 4500);
+  };
 
-    if (!promocodeApplied) {
+  const renderPromocode = (): JSX.Element | null => {
+    if (applied) {
       return (
         <div
-          className='row-center-space-between container'
-          style={{gap: 10, marginBottom: '14%'}}
+          className='container'
+          style={{marginBottom: '14%'}}
         >
-          <custom.InputField
-            placeholder='Enter promocode'
-            containerStyle={{width: '66%'}}
-          />
-          <div style={{width: '34%'}}>
-            <components.Button
-              text='Apply'
-              colorScheme='secondary'
-              containerStyle={{width: '100%'}}
-              onClick={() => setPromocodeApplied(true)}
-            />
+          <div
+            className='row-center'
+            style={{gap: 12, marginBottom: 8}}
+          >
+            <svg.CheckPromocodeSvg />
+            <span
+              className='t14'
+              style={{color: 'var(--text-color)'}}
+            >
+              {cart.promoCode}
+            </span>
           </div>
         </div>
       );
     }
 
-    return null;
+    return (
+      <div
+        className='container'
+        style={{marginBottom: '14%'}}
+      >
+        <div
+          className='row-center-space-between'
+          style={{gap: 10}}
+        >
+          <custom.InputField
+            placeholder='Enter promocode'
+            value={promoInput}
+            onChange={(e) => setPromoInput(e.target.value)}
+            containerStyle={{width: '66%'}}
+          />
+          <div style={{width: '34%'}}>
+            <components.Button
+              text={applyBusy ? '…' : 'Apply'}
+              colorScheme='secondary'
+              containerStyle={{width: '100%'}}
+              onClick={() => void onApplyPromo()}
+            />
+          </div>
+        </div>
+        {applyError ? (
+          <p
+            className='t12'
+            style={{
+              marginTop: 10,
+              marginBottom: 0,
+              color: '#c44',
+            }}
+          >
+            {applyError}
+          </p>
+        ) : null}
+      </div>
+    );
   };
 
   const renderSummary = (): JSX.Element => {
+    const applied = Boolean(cart.promoCode?.trim());
+    const hasPercentOff =
+      applied && cart.discount > 0 && cart.discountAmount > 0;
+    const freeShippingOnly =
+      applied && cart.discount === 0 && cart.discountAmount === 0;
+
     return (
       <section
         className='container'
         style={{marginBottom: 10}}
       >
+        {promoSuccessToast ? (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: '12px 14px',
+              borderRadius: 10,
+              backgroundColor: 'rgba(76, 119, 92, 0.28)',
+              border: '1px solid rgba(76, 119, 92, 0.45)',
+            }}
+          >
+            <p
+              className='t14'
+              style={{
+                margin: 0,
+                textAlign: 'center',
+                color: '#1C2D18',
+                fontWeight: 600,
+              }}
+            >
+              Coupon added successfully!
+            </p>
+          </div>
+        ) : null}
         <components.Container
           containerStyle={{
             backgroundColor: APP_PALETTE.cartCardSurface,
@@ -126,6 +221,41 @@ export const Order: React.FC = () => {
               ${cart.subtotal.toFixed(2)}
             </span>
           </div>
+          {(hasPercentOff || freeShippingOnly) && (
+            <div
+              className='row-center-space-between'
+              style={{marginBottom: 9}}
+            >
+              <span
+                className='t14'
+                style={{color: 'var(--text-on-light)'}}
+              >
+                Discount
+              </span>
+              <span
+                className='t14'
+                style={{
+                  color: '#00824B',
+                  fontWeight: 600,
+                }}
+              >
+                {hasPercentOff
+                  ? `-$${cart.discountAmount.toFixed(2)}`
+                  : 'Free shipping'}
+              </span>
+            </div>
+          )}
+          <div
+            className='row-center-space-between'
+            style={{marginBottom: 9}}
+          >
+            <span className='t14' style={{color: 'var(--text-on-light)'}}>
+              Delivery
+            </span>
+            <span className='t14' style={{color: 'var(--text-on-light)'}}>
+              —
+            </span>
+          </div>
           <div
             className='row-center-space-between'
             style={{
@@ -135,13 +265,10 @@ export const Order: React.FC = () => {
             }}
           >
             <span className='t14' style={{color: 'var(--text-on-light)'}}>
-              Delivery
+              Tax
             </span>
-            <span
-              className='t14'
-              style={{color: '#00824B'}}
-            >
-              Free
+            <span className='t14' style={{color: 'var(--text-on-light)'}}>
+              ${orderTotals.processingTax.toFixed(2)}
             </span>
           </div>
           <div className='row-center-space-between'>
@@ -155,7 +282,7 @@ export const Order: React.FC = () => {
               className='t14'
               style={{color: 'var(--text-on-light)'}}
             >
-              ${cart.total.toFixed(2)}
+              ${orderTotals.grandTotal.toFixed(2)}
             </span>
           </div>
         </components.Container>

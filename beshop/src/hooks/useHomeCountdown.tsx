@@ -1,37 +1,34 @@
 import {useState, useEffect, useCallback} from 'react';
 
 import {supabase} from '../supabaseClient';
-import type {ProductType} from '../types';
 import type {ShopHomeCountdownRow} from '../types/shop';
 import type {ShopProduct} from '../types/catalog';
+import type {ProductType} from '../types';
 import {shopProductToProductType} from '../utils/shopCatalogProduct';
 
 export type HomeCountdownDisplay = {
   endsAtIso: string;
+  headlineText: string;
   bodyText: string;
   buttonLabel: string;
   product: ProductType;
 };
 
-type CountdownJoinRow = ShopHomeCountdownRow & {
-  shop_products: ShopProduct | null;
-};
-
-function rowToDisplay(row: CountdownJoinRow | null): HomeCountdownDisplay | null {
-  if (!row || !row.enabled || !row.ends_at || !row.product_id) {
-    return null;
-  }
-  const p = row.shop_products;
-  if (!p) {
+function buildDisplay(
+  row: ShopHomeCountdownRow | null,
+  productRow: ShopProduct | null,
+): HomeCountdownDisplay | null {
+  if (!row || !row.enabled || !row.ends_at || !row.product_id || !productRow) {
     return null;
   }
   const end = new Date(row.ends_at).getTime();
   if (Number.isNaN(end) || end <= Date.now()) {
     return null;
   }
-  const product = shopProductToProductType(p, null);
+  const product = shopProductToProductType(productRow, null);
   return {
     endsAtIso: row.ends_at,
+    headlineText: row.headline_text?.trim() ?? '',
     bodyText: row.body_text?.trim() ?? '',
     buttonLabel: (row.button_label?.trim() || 'Buy now').slice(0, 80),
     product,
@@ -49,36 +46,10 @@ export const useHomeCountdown = () => {
       return;
     }
     setLoading(true);
-    const {data, error} = await supabase
+    const {data: rowRaw, error} = await supabase
       .from('shop_home_countdown')
       .select(
-        `
-        id,
-        enabled,
-        product_id,
-        ends_at,
-        body_text,
-        button_label,
-        updated_at,
-        shop_products (
-          id,
-          category_id,
-          subcategory_id,
-          name,
-          details,
-          image_paths,
-          flag_discount,
-          flag_offer,
-          flag_hot,
-          flag_new,
-          weight_grams,
-          stock_quantity,
-          price_cents,
-          compare_at_price_cents,
-          created_at,
-          updated_at
-        )
-      `,
+        'id, enabled, product_id, ends_at, headline_text, body_text, button_label, updated_at',
       )
       .eq('id', 'default')
       .maybeSingle();
@@ -86,9 +57,24 @@ export const useHomeCountdown = () => {
     if (error) {
       console.error(error);
       setDisplay(null);
-    } else {
-      setDisplay(rowToDisplay(data as CountdownJoinRow | null));
+      setLoading(false);
+      return;
     }
+
+    const row = rowRaw as ShopHomeCountdownRow | null;
+    let productRow: ShopProduct | null = null;
+    if (row?.product_id) {
+      const {data: p, error: pErr} = await supabase
+        .from('shop_products')
+        .select('*')
+        .eq('id', row.product_id)
+        .maybeSingle();
+      if (!pErr && p) {
+        productRow = p as ShopProduct;
+      }
+    }
+
+    setDisplay(buildDisplay(row, productRow));
     setLoading(false);
   }, []);
 

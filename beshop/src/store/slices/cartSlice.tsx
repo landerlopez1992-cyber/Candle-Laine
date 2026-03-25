@@ -43,11 +43,11 @@ export const cartSlice = createSlice({
           return item;
         }, state);
         state.subtotal += Number(action.payload.price);
+        state.total +=
+          Number(action.payload.price) * (1 - state.discount / 100);
         state.discountAmount = Number(
           (state.subtotal - state.total).toFixed(2),
         );
-        state.total +=
-          Number(action.payload.price) * (1 - state.discount / 100);
       } else {
         state.list.push({
           ...action.payload,
@@ -56,6 +56,9 @@ export const cartSlice = createSlice({
         state.subtotal += Number(action.payload.price);
         state.total +=
           Number(action.payload.price) * (1 - state.discount / 100);
+        state.discountAmount = Number(
+          (state.subtotal - state.total).toFixed(2),
+        );
       }
     },
     removeFromCart: (state, action: PayloadAction<ProductType>) => {
@@ -73,11 +76,11 @@ export const cartSlice = createSlice({
           return item;
         }, state);
         state.subtotal -= Number(action.payload.price);
+        state.total -=
+          Number(action.payload.price) * (1 - state.discount / 100);
         state.discountAmount = Number(
           (state.subtotal - state.total).toFixed(2),
         );
-        state.total -=
-          Number(action.payload.price) * (1 - state.discount / 100);
 
         if (state.list.length === 0) {
           state.discount = 0;

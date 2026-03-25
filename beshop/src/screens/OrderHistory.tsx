@@ -52,6 +52,9 @@ export const OrderHistory: React.FC = () => {
     if (status === 'paid') {
       return <svg.DeliveredSvg />;
     }
+    if (status === 'pending_payment') {
+      return <svg.CreditCardSvg />;
+    }
     return <svg.WaySvg />;
   };
 
@@ -251,6 +254,19 @@ export const OrderHistory: React.FC = () => {
                       -$0
                     </span>
                   </div>
+                  {order.paymentMethodDisplay ? (
+                    <div
+                      className='row-center-space-between'
+                      style={{marginTop: 10}}
+                    >
+                      <span className='t14' style={{color: onCard.secondary}}>
+                        Paid with
+                      </span>
+                      <span className='t14' style={{color: onCard.primary}}>
+                        {order.paymentMethodDisplay}
+                      </span>
+                    </div>
+                  ) : null}
                   <div
                     className='row-center-space-between'
                     style={{marginTop: 30}}

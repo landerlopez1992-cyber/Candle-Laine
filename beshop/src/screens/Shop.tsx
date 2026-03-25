@@ -40,7 +40,11 @@ export const Shop: React.FC = () => {
     dispatch(actions.setColor(APP_PALETTE.appShell));
   }, [dispatch]);
 
-  const sortedProducts = [...products].sort(
+  const filteredProducts = discountOnly
+    ? products.filter((p) => p.flag_discount === true)
+    : products;
+
+  const sortedProducts = [...filteredProducts].sort(
     (a: ProductType, b: ProductType) => {
       switch (sort) {
         case 'Price: low to high':
@@ -52,7 +56,11 @@ export const Shop: React.FC = () => {
         case 'Top':
           return a.isTop === b.isTop ? 0 : a.isTop ? -1 : 1;
         case 'Sale':
-          return a.oldPrice === b.oldPrice ? 0 : a.oldPrice ? -1 : 1;
+          return a.flag_discount === b.flag_discount
+            ? 0
+            : a.flag_discount
+              ? -1
+              : 1;
         default:
           return 0;
       }

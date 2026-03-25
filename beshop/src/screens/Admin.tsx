@@ -13,6 +13,7 @@ import {AdminProductsPanel} from './admin/AdminProductsPanel';
 import {AdminUsersPanel} from './admin/AdminUsersPanel';
 import {AdminSettingsPanel} from './admin/AdminSettingsPanel';
 import {AdminPromotionsPanel} from './admin/AdminPromotionsPanel';
+import {AdminOffersPanel} from './admin/AdminOffersPanel';
 import {ADMIN_SECTIONS, AdminShell, type AdminSection} from './admin/AdminShell';
 import { APP_PALETTE } from '../theme/appPalette';
 
@@ -56,6 +57,7 @@ export const Admin: React.FC = () => {
       s === 'users' ||
       s === 'orders' ||
       s === 'products' ||
+      s === 'offers' ||
       s === 'promotions' ||
       s === 'settings'
     ) {
@@ -145,11 +147,13 @@ export const Admin: React.FC = () => {
           {section === 'users' && <AdminUsersPanel />}
           {section === 'orders' && <AdminOrdersPanel />}
           {section === 'products' && <AdminProductsPanel />}
+          {section === 'offers' && <AdminOffersPanel />}
           {section === 'settings' && <AdminSettingsPanel />}
           {section === 'promotions' && <AdminPromotionsPanel />}
           {section !== 'users' &&
             section !== 'orders' &&
             section !== 'products' &&
+            section !== 'offers' &&
             section !== 'promotions' &&
             section !== 'settings' && (
             <>

@@ -60,5 +60,7 @@ export function shopProductToProductType(
     tags: [],
     style: '',
     imageColor: '',
+    flag_discount: p.flag_discount,
+    weight_grams: p.weight_grams,
   };
 }

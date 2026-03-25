@@ -83,10 +83,15 @@ export const HomeCountdownBlock: React.FC<Props> = ({data}) => {
     marginTop: 4,
   };
 
+  const p = data.product;
+  const headline = data.headlineText.trim();
+  const sub = data.bodyText.trim();
+  const hasHeadline = headline.length > 0;
+  const hasSub = sub.length > 0;
+
   return (
     <section
       style={{
-        position: 'relative',
         marginBottom: 40,
         marginLeft: 20,
         marginRight: 20,
@@ -102,110 +107,198 @@ export const HomeCountdownBlock: React.FC<Props> = ({data}) => {
     >
       <div
         style={{
-          position: 'absolute',
-          top: 14,
-          right: 14,
-          width: 88,
-          height: 88,
-          borderRadius: 12,
-          backgroundColor: APP_PALETTE.imageWell,
-          border: `1px solid ${APP_PALETTE.border}`,
-          overflow: 'hidden',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1,
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          gap: 16,
+          alignItems: 'flex-start',
+          marginBottom: 18,
         }}
       >
-        <img
-          src={data.product.image}
-          alt=''
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-          }}
-        />
-      </div>
+        <div style={{flex: '1 1 200px', minWidth: 0}}>
+          {hasHeadline ? (
+            <h3
+              style={{
+                margin: '0 0 10px',
+                fontFamily: 'League Spartan, sans-serif',
+                fontSize: 22,
+                fontWeight: 700,
+                lineHeight: 1.25,
+                color: APP_PALETTE.textOnDark,
+              }}
+            >
+              {headline}
+            </h3>
+          ) : null}
+          {hasSub ? (
+            <p
+              className='t14'
+              style={{
+                margin: hasHeadline ? '0 0 14px' : '0 0 14px',
+                color: APP_PALETTE.textMuted,
+                lineHeight: 1.55,
+                whiteSpace: 'pre-wrap',
+                fontSize: 14,
+              }}
+            >
+              {sub}
+            </p>
+          ) : null}
+          {!hasHeadline && !hasSub ? (
+            <p
+              className='t14'
+              style={{
+                margin: '0 0 14px',
+                color: APP_PALETTE.textMuted,
+                fontStyle: 'italic',
+              }}
+            >
+              Limited time offer
+            </p>
+          ) : null}
 
-      <div style={{paddingRight: 102}}>
-        {data.bodyText ? (
-          <p
-            className='t14'
+          <div
             style={{
-              margin: '0 0 14px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 8,
+              justifyContent: 'flex-start',
+              alignItems: 'stretch',
+            }}
+          >
+            <div style={{...unitStyle, minWidth: days > 99 ? 64 : 56}}>
+              <div style={numStyle}>{String(days)}</div>
+              <div style={labStyle}>Days</div>
+            </div>
+            <div style={unitStyle}>
+              <div style={numStyle}>{pad2(hours)}</div>
+              <div style={labStyle}>Hours</div>
+            </div>
+            <div style={unitStyle}>
+              <div style={numStyle}>{pad2(minutes)}</div>
+              <div style={labStyle}>Min</div>
+            </div>
+            <div style={unitStyle}>
+              <div style={numStyle}>{pad2(seconds)}</div>
+              <div style={labStyle}>Sec</div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            flex: '0 0 auto',
+            width: 132,
+            maxWidth: '100%',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
+        >
+          <div
+            style={{
+              width: 120,
+              height: 120,
+              maxWidth: '100%',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              borderRadius: 12,
+              backgroundColor: APP_PALETTE.imageWell,
+              border: `1px solid ${APP_PALETTE.border}`,
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <img
+              src={p.image}
+              alt=''
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          </div>
+          <h4
+            className='number-of-lines-2'
+            style={{
+              margin: '10px 0 6px',
+              fontSize: 14,
+              fontWeight: 600,
+              lineHeight: 1.3,
+              textAlign: 'center',
               color: APP_PALETTE.textOnDark,
-              lineHeight: 1.55,
-              whiteSpace: 'pre-wrap',
             }}
           >
-            {data.bodyText}
-          </p>
-        ) : (
-          <p
-            className='t14'
+            {p.name}
+          </h4>
+          <div
             style={{
-              margin: '0 0 14px',
-              color: APP_PALETTE.textMuted,
-              fontStyle: 'italic',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'baseline',
+              justifyContent: 'center',
+              gap: 6,
             }}
           >
-            Limited time offer
-          </p>
-        )}
+            {p.oldPrice != null && p.oldPrice > p.price ? (
+              <span
+                style={{
+                  fontSize: 12,
+                  color: APP_PALETTE.textMuted,
+                  textDecoration: 'line-through',
+                  fontFamily: 'Lato, sans-serif',
+                }}
+              >
+                ${p.oldPrice}
+              </span>
+            ) : null}
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                fontFamily: 'Lato, sans-serif',
+                color: APP_PALETTE.accent,
+              }}
+            >
+              ${p.price}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div
         style={{
           display: 'flex',
-          flexWrap: 'wrap',
-          gap: 8,
-          justifyContent: 'flex-start',
-          alignItems: 'stretch',
-          marginBottom: 16,
-          paddingRight: 4,
-        }}
-      >
-        <div style={unitStyle}>
-          <div style={numStyle}>{pad2(days)}</div>
-          <div style={labStyle}>Days</div>
-        </div>
-        <div style={unitStyle}>
-          <div style={numStyle}>{pad2(hours)}</div>
-          <div style={labStyle}>Hours</div>
-        </div>
-        <div style={unitStyle}>
-          <div style={numStyle}>{pad2(minutes)}</div>
-          <div style={labStyle}>Min</div>
-        </div>
-        <div style={unitStyle}>
-          <div style={numStyle}>{pad2(seconds)}</div>
-          <div style={labStyle}>Sec</div>
-        </div>
-      </div>
-
-      <button
-        type='button'
-        className='clickable'
-        onClick={onBuy}
-        style={{
-          display: 'block',
+          justifyContent: 'center',
           width: '100%',
-          maxWidth: 320,
-          padding: '12px 18px',
-          borderRadius: 10,
-          border: `1px solid ${APP_PALETTE.accent}`,
-          backgroundColor: APP_PALETTE.accent,
-          color: '#1C2D18',
-          fontFamily: 'Lato, sans-serif',
-          fontSize: 14,
-          fontWeight: 800,
-          letterSpacing: 0.08,
-          textTransform: 'uppercase',
         }}
       >
-        {data.buttonLabel || 'Buy now'}
-      </button>
+        <button
+          type='button'
+          className='clickable'
+          onClick={onBuy}
+          style={{
+            display: 'block',
+            width: '100%',
+            maxWidth: 320,
+            padding: '12px 18px',
+            borderRadius: 10,
+            border: `1px solid ${APP_PALETTE.accent}`,
+            backgroundColor: APP_PALETTE.accent,
+            color: '#1C2D18',
+            fontFamily: 'Lato, sans-serif',
+            fontSize: 14,
+            fontWeight: 800,
+            letterSpacing: 0.08,
+            textTransform: 'uppercase',
+            textAlign: 'center',
+          }}
+        >
+          {data.buttonLabel || 'Buy now'}
+        </button>
+      </div>
     </section>
   );
 };

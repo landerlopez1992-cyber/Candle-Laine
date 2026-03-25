@@ -2,11 +2,10 @@ import React, {useEffect, useState} from 'react';
 
 import {items} from '../items';
 import {hooks} from '../hooks';
-import {svg} from '../assets/svg';
 import {PromocodeType} from '../types';
 import {actions} from '../store/actions';
 import {components} from '../components';
-import { APP_PALETTE } from '../theme/appPalette';
+import {APP_PALETTE} from '../theme/appPalette';
 
 const tabs = ['Current', 'Used'];
 
@@ -15,7 +14,11 @@ export const MyPromocodes: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState(0);
 
-  const {promocodesLoading, promocodes} = hooks.usePromocodes();
+  const {
+    promocodesLoading,
+    currentPromocodes,
+    usedPromocodes,
+  } = hooks.usePromocodes();
 
   hooks.useThemeColor(APP_PALETTE.appShell);
 
@@ -72,23 +75,13 @@ export const MyPromocodes: React.FC = () => {
     );
   };
 
-  const renderFooter = (): JSX.Element => {
-    return (
-      <section
-        style={{
-          padding: 20,
-          display: 'flex',
-          justifyContent: 'center',
-        }}
-        className='clickable'
-      >
-        <svg.NewPromocodeSvg />
-      </section>
-    );
-  };
-
   const renderContent = (): JSX.Element => {
-    if (promocodesLoading) return <components.Loader />;
+    if (promocodesLoading) {
+      return <components.Loader />;
+    }
+
+    const list =
+      activeTab === 0 ? currentPromocodes : usedPromocodes;
 
     return (
       <main
@@ -106,19 +99,34 @@ export const MyPromocodes: React.FC = () => {
             gridTemplateColumns: 'repeat(2, 1fr)',
           }}
         >
-          {promocodes?.map((promocode: PromocodeType, index, array) => {
-            const isLast = index === array.length - 1;
-
-            return (
-              <items.PromocodeItem
-                isLast={isLast}
-                key={promocode.id}
-                promocode={promocode}
-              />
-            );
-          })}
+          {list.length > 0 ? (
+            list.map((promocode: PromocodeType, index, array) => {
+              const isLast = index === array.length - 1;
+              return (
+                <items.PromocodeItem
+                  isLast={isLast}
+                  key={`${activeTab}-${String(promocode.id)}`}
+                  promocode={promocode}
+                />
+              );
+            })
+          ) : (
+            <p
+              className='t14'
+              style={{
+                gridColumn: '1 / -1',
+                textAlign: 'center',
+                color: 'var(--text-color)',
+                opacity: 0.85,
+                padding: '24px 12px',
+              }}
+            >
+              {activeTab === 0
+                ? 'No promocodes available. Sign in or check back when new offers are published.'
+                : 'No used promocodes yet. Codes you apply at checkout will appear here.'}
+            </p>
+          )}
         </section>
-        {renderFooter()}
       </main>
     );
   };

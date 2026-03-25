@@ -30,5 +30,6 @@ export const statusMatch = (
     ? true
     : (product.isNew && selectedCategories.includes('new')) ||
         (product.isTop && selectedCategories.includes('top')) ||
-        (!!product.oldPrice && selectedCategories.includes('sale'));
+        ((product.flag_discount === true || !!product.oldPrice) &&
+          selectedCategories.includes('sale'));
 };

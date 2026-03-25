@@ -1,22 +1,51 @@
-import {CHECKOUT_CREDIT_CARDS} from '../constants/checkoutPayment';
 import type {CheckoutPaymentSelection} from '../store/slices/paymentSlice';
 
-/** Texto que se muestra en la tarjeta «Payment method» del checkout. */
+/** True cuando el usuario eligió un método usable (Zelle, tarjeta guardada pm_*, Affirm/Klarna). */
+export function isCheckoutPaymentSelectionReady(
+  selection: CheckoutPaymentSelection | null,
+): boolean {
+  if (!selection) {
+    return false;
+  }
+  if (selection.kind === 'zelle') {
+    return true;
+  }
+  if (selection.kind === 'installments') {
+    return (
+      selection.installmentsProvider === 'affirm' ||
+      selection.installmentsProvider === 'klarna'
+    );
+  }
+  if (selection.kind === 'card') {
+    return String(selection.cardId ?? '').trim().startsWith('pm_');
+  }
+  return false;
+}
+
+/** Label shown on the checkout «Payment method» row. */
 export function getCheckoutPaymentLabel(
   selection: CheckoutPaymentSelection | null,
 ): string {
   if (!selection) {
-    return 'Selecciona método de pago';
+    return 'Select a payment method';
   }
   if (selection.kind === 'zelle') {
     return 'Zelle';
   }
   if (selection.kind === 'installments') {
-    return 'Pagar en cuotas';
+    if (selection.installmentsProvider === 'klarna') {
+      return 'Klarna';
+    }
+    if (selection.installmentsProvider === 'affirm') {
+      return 'Affirm';
+    }
+    return 'Pay in installments';
   }
   if (selection.kind === 'card' && selection.cardId) {
-    const c = CHECKOUT_CREDIT_CARDS.find((x) => x.id === selection.cardId);
-    return c?.number ?? 'Tarjeta';
+    if (selection.cardLabel?.trim()) {
+      return selection.cardLabel.trim();
+    }
+    return 'Saved card';
   }
-  return 'Tarjeta';
+  return 'Card';
 }

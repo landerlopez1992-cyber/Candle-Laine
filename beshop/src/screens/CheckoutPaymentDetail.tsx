@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
 
-import {CHECKOUT_CREDIT_CARDS} from '../constants/checkoutPayment';
 import {Routes} from '../enums';
 import {hooks} from '../hooks';
 import {actions} from '../store/actions';
@@ -8,6 +7,7 @@ import {components} from '../components';
 import {supabase} from '../supabaseClient';
 import {setCheckoutPaymentSelection} from '../store/slices/paymentSlice';
 import {APP_PALETTE} from '../theme/appPalette';
+import {bnplLogoUrl} from '../config/paymentLogos';
 import type {
   CheckoutPaymentDetailState,
   ShopPaymentSettingsRow,
@@ -37,6 +37,8 @@ export const CheckoutPaymentDetail: React.FC = () => {
     | undefined;
   const method = rawState?.method;
   const cardId = rawState?.cardId;
+  const cardLabel = rawState?.cardLabel;
+  const installmentsProvider = rawState?.installmentsProvider;
 
   const [paymentSettings, setPaymentSettings] =
     useState<ShopPaymentSettingsRow | null>(null);
@@ -94,10 +96,23 @@ export const CheckoutPaymentDetail: React.FC = () => {
     if (method !== 'card') {
       return;
     }
-    if (!cardId || !CHECKOUT_CREDIT_CARDS.some((c) => c.id === cardId)) {
+    if (!cardId) {
+      navigate(Routes.CheckoutPaymentMethod, {replace: true});
+      return;
+    }
+    if (!String(cardId).startsWith('pm_')) {
       navigate(Routes.CheckoutPaymentMethod, {replace: true});
     }
   }, [method, cardId, navigate]);
+
+  useEffect(() => {
+    if (method !== 'installments') {
+      return;
+    }
+    if (!installmentsProvider) {
+      navigate(Routes.CheckoutInstallmentsPick, {replace: true});
+    }
+  }, [method, installmentsProvider, navigate]);
 
   const handleAccept = useCallback(() => {
     if (!method) {
@@ -107,30 +122,45 @@ export const CheckoutPaymentDetail: React.FC = () => {
       if (!cardId) {
         return;
       }
-      dispatch(setCheckoutPaymentSelection({kind: 'card', cardId}));
+      dispatch(
+        setCheckoutPaymentSelection({
+          kind: 'card',
+          cardId,
+          ...(cardLabel?.trim() ? {cardLabel: cardLabel.trim()} : {}),
+        }),
+      );
+    } else if (method === 'installments') {
+      if (!installmentsProvider) {
+        return;
+      }
+      dispatch(
+        setCheckoutPaymentSelection({
+          kind: 'installments',
+          installmentsProvider,
+        }),
+      );
     } else {
       dispatch(setCheckoutPaymentSelection({kind: method}));
     }
     navigate(Routes.Checkout);
-  }, [method, cardId, dispatch, navigate]);
+  }, [method, cardId, cardLabel, installmentsProvider, dispatch, navigate]);
 
   if (!method) {
     return null;
   }
 
-  const cardRow =
-    method === 'card' && cardId
-      ? CHECKOUT_CREDIT_CARDS.find((c) => c.id === cardId)
-      : undefined;
-
   const headerTitle =
     method === 'zelle'
       ? 'Zelle'
-      : method === 'installments'
-        ? 'Pagar en cuotas'
-        : cardRow
-          ? cardRow.name
-          : 'Tarjeta';
+      : method === 'installments' && installmentsProvider === 'affirm'
+        ? 'Affirm'
+        : method === 'installments' && installmentsProvider === 'klarna'
+          ? 'Klarna'
+          : method === 'installments'
+            ? 'Pay in installments'
+            : cardLabel?.trim()
+              ? cardLabel.trim()
+              : 'Card';
 
   const renderHeader = (): JSX.Element => {
     return (
@@ -143,7 +173,7 @@ export const CheckoutPaymentDetail: React.FC = () => {
   };
 
   const renderContent = (): JSX.Element | null => {
-    if (method === 'card' && !cardRow) {
+    if (method === 'card' && !cardId) {
       return null;
     }
 
@@ -159,7 +189,7 @@ export const CheckoutPaymentDetail: React.FC = () => {
           }}
         >
           <p className='t16' style={{color: APP_PALETTE.textOnDark}}>
-            Cargando…
+            Loading…
           </p>
         </main>
       );
@@ -214,7 +244,7 @@ export const CheckoutPaymentDetail: React.FC = () => {
                 opacity: 0.9,
               }}
             >
-              Envía el pago a:
+              Send payment to:
             </p>
             <p
               className='t16'
@@ -227,7 +257,7 @@ export const CheckoutPaymentDetail: React.FC = () => {
             >
               {paymentSettings.zelle_phone.trim()
                 ? paymentSettings.zelle_phone.trim()
-                : 'El número o correo de Zelle se configurará pronto.'}
+                : 'Zelle phone or email will be configured soon.'}
             </p>
             {Boolean(paymentSettings.zelle_instructions.trim()) && (
               <p
@@ -245,7 +275,7 @@ export const CheckoutPaymentDetail: React.FC = () => {
           </components.Container>
           <section style={{paddingTop: 28}}>
             <components.Button
-              text='Aceptar'
+              text='Accept'
               onClick={handleAccept}
               containerStyle={{textTransform: 'none', fontSize: 16}}
             />
@@ -254,7 +284,8 @@ export const CheckoutPaymentDetail: React.FC = () => {
       );
     }
 
-    if (method === 'installments') {
+    if (method === 'installments' && installmentsProvider) {
+      const label = installmentsProvider === 'affirm' ? 'Affirm' : 'Klarna';
       return (
         <main
           className='scrollable'
@@ -271,9 +302,25 @@ export const CheckoutPaymentDetail: React.FC = () => {
               className='row-center-space-between'
               style={{marginBottom: 18}}
             >
-              <h5 style={{color: 'var(--text-on-light)', margin: 0}}>
-                Pagar en cuotas
-              </h5>
+              <div
+                className='row-center'
+                style={{gap: 10, minWidth: 0, flex: 1, marginRight: 8}}
+              >
+                <img
+                  src={bnplLogoUrl(installmentsProvider)}
+                  alt=''
+                  aria-hidden
+                  style={{
+                    height: 24,
+                    width: 'auto',
+                    maxWidth: 72,
+                    maxHeight: 26,
+                    objectFit: 'contain',
+                    flexShrink: 0,
+                  }}
+                />
+                <h5 style={{color: 'var(--text-on-light)', margin: 0}}>{label}</h5>
+              </div>
               <div style={radioOuter(true)} className='center'>
                 <div
                   style={{
@@ -300,13 +347,40 @@ export const CheckoutPaymentDetail: React.FC = () => {
                 lineHeight: 1.55,
               }}
             >
-              Elige cuotas al confirmar el pedido. Si no ves la opción, contacta
-              con soporte.
+              On checkout, tap <strong>Continue application</strong> to open{' '}
+              {label}&apos;s secure flow. After you finish, you&apos;ll return here
+              and we&apos;ll create your order if the payment succeeds.
             </p>
+            {installmentsProvider === 'affirm' ? (
+              <p
+                className='t12'
+                style={{
+                  margin: '14px 0 0',
+                  color: 'var(--text-on-light)',
+                  opacity: 0.9,
+                  lineHeight: 1.5,
+                }}
+              >
+                For some purchases, Affirm may require a minimum amount (often $50
+                USD).
+              </p>
+            ) : (
+              <p
+                className='t12'
+                style={{
+                  margin: '14px 0 0',
+                  color: 'var(--text-on-light)',
+                  opacity: 0.9,
+                  lineHeight: 1.5,
+                }}
+              >
+                Available options can vary depending on your region.
+              </p>
+            )}
           </components.Container>
           <section style={{paddingTop: 28}}>
             <components.Button
-              text='Aceptar'
+              text='Accept'
               onClick={handleAccept}
               containerStyle={{textTransform: 'none', fontSize: 16}}
             />
@@ -315,7 +389,7 @@ export const CheckoutPaymentDetail: React.FC = () => {
       );
     }
 
-    if (method === 'card' && cardRow) {
+    if (method === 'card' && cardId) {
       return (
         <main
           className='scrollable'
@@ -333,7 +407,7 @@ export const CheckoutPaymentDetail: React.FC = () => {
               style={{marginBottom: 18}}
             >
               <h5 style={{color: 'var(--text-on-light)', margin: 0}}>
-                {cardRow.name}
+                {cardLabel?.trim() || 'Card'}
               </h5>
               <div style={radioOuter(true)} className='center'>
                 <div
@@ -357,7 +431,7 @@ export const CheckoutPaymentDetail: React.FC = () => {
               className='t14'
               style={{margin: '0 0 8px', color: 'var(--text-on-light)'}}
             >
-              Número de tarjeta
+              Card number
             </p>
             <p
               className='t16'
@@ -368,12 +442,12 @@ export const CheckoutPaymentDetail: React.FC = () => {
                 letterSpacing: '-0.01em',
               }}
             >
-              {cardRow.number}
+              {cardLabel?.trim() || '•••• •••• •••• ••••'}
             </p>
           </components.Container>
           <section style={{paddingTop: 28}}>
             <components.Button
-              text='Aceptar'
+              text='Accept'
               onClick={handleAccept}
               containerStyle={{textTransform: 'none', fontSize: 16}}
             />

@@ -10,7 +10,7 @@ export const PaymentCheckSvg: React.FC = () => {
     >
       <g>
         <path
-          stroke='#00824B'
+          stroke='currentColor'
           strokeLinecap='round'
           strokeLinejoin='round'
           strokeWidth={2}

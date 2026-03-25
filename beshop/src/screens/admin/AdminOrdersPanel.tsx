@@ -9,6 +9,9 @@ import {
   type OrderRow,
   type OrderStatus,
 } from '../../types/shop';
+import type {UserAddressRow} from '../../types/address';
+import {formatAddressLine} from '../../utils/formatAddressLine';
+import {notifyOrderEmail} from '../../utils/orderEmailNotify';
 
 const tableShell: React.CSSProperties = {
   width: '100%',
@@ -24,19 +27,83 @@ const thTd: React.CSSProperties = {
   textAlign: 'left',
 };
 
-const selectStyle: React.CSSProperties = {
+const selectBaseStyle: React.CSSProperties = {
   padding: '8px 10px',
   borderRadius: 8,
   border: `1px solid ${APP_PALETTE.border}`,
   fontFamily: 'Lato, sans-serif',
   fontSize: 13,
   color: '#1C2D18',
-  backgroundColor: APP_PALETTE.imageWell,
   minWidth: 180,
   cursor: 'pointer',
 };
 
-function paymentMethodLabel(method: string | null): string {
+function statusSelectStyle(status: OrderStatus): React.CSSProperties {
+  const base: React.CSSProperties = {...selectBaseStyle};
+  switch (status) {
+    case 'pending_payment':
+      return {
+        ...base,
+        backgroundColor: 'rgba(241, 185, 127, 0.35)',
+        borderColor: APP_PALETTE.accent,
+      };
+    case 'created':
+      return {
+        ...base,
+        backgroundColor: 'rgba(76, 119, 92, 0.22)',
+        borderColor: '#4C775C',
+      };
+    case 'paid':
+      return {
+        ...base,
+        backgroundColor: 'rgba(84, 89, 83, 0.2)',
+        borderColor: APP_PALETTE.border,
+      };
+    case 'processing':
+      return {
+        ...base,
+        backgroundColor: 'rgba(241, 185, 127, 0.2)',
+        borderColor: APP_PALETTE.accent,
+      };
+    case 'shipped':
+      return {
+        ...base,
+        backgroundColor: 'rgba(76, 119, 92, 0.32)',
+        borderColor: '#4C775C',
+      };
+    case 'cancelled':
+      return {
+        ...base,
+        backgroundColor: 'rgba(180, 60, 60, 0.15)',
+        borderColor: 'rgba(160, 50, 50, 0.6)',
+      };
+    default:
+      return {
+        ...base,
+        backgroundColor: APP_PALETTE.imageWell,
+      };
+  }
+}
+
+function metaString(
+  m: Record<string, unknown> | null | undefined,
+  key: string,
+): string | undefined {
+  if (!m || typeof m !== 'object') {
+    return undefined;
+  }
+  const v = (m as Record<string, unknown>)[key];
+  return typeof v === 'string' ? v : undefined;
+}
+
+function paymentMethodLabel(
+  method: string | null,
+  metadata?: Record<string, unknown> | null,
+): string {
+  const fromMeta = metaString(metadata ?? null, 'payment_method_display')?.trim();
+  if (fromMeta) {
+    return fromMeta;
+  }
   if (!method) {
     return '—';
   }
@@ -49,7 +116,36 @@ function paymentMethodLabel(method: string | null): string {
   if (method === 'installments') {
     return 'Cuotas';
   }
+  if (method === 'installments_klarna') {
+    return 'Klarna';
+  }
+  if (method === 'installments_affirm') {
+    return 'Affirm';
+  }
   return method;
+}
+
+function splitFirstLast(fullName: string | null | undefined): {first: string; last: string} {
+  const t = (fullName ?? '').trim();
+  if (!t) {
+    return {first: '—', last: '—'};
+  }
+  const parts = t.split(/\s+/);
+  if (parts.length === 1) {
+    return {first: parts[0]!, last: '—'};
+  }
+  return {first: parts[0]!, last: parts.slice(1).join(' ')};
+}
+
+function formatMetaCents(centsStr: string | undefined): string {
+  if (centsStr == null || centsStr === '') {
+    return '—';
+  }
+  const n = parseInt(String(centsStr), 10);
+  if (!Number.isFinite(n)) {
+    return '—';
+  }
+  return (n / 100).toFixed(2);
 }
 
 function statusLabel(status: OrderStatus): string {
@@ -64,6 +160,15 @@ export const AdminOrdersPanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [shopOrigin, setShopOrigin] = useState<{
+    ship_from_zip: string;
+    ship_from_state: string;
+    ship_from_country: string;
+  } | null>(null);
+  const [shopZellePhone, setShopZellePhone] = useState<string | null>(null);
+  const [detailShippingAddress, setDetailShippingAddress] =
+    useState<UserAddressRow | null>(null);
+  const [detailAddressLoading, setDetailAddressLoading] = useState(false);
 
   const load = useCallback(async () => {
     if (!supabase) {
@@ -84,17 +189,20 @@ export const AdminOrdersPanel: React.FC = () => {
         currency,
         human_order_number,
         payment_method,
+        metadata,
         created_at,
         updated_at,
         order_items (
           id,
           name,
           quantity,
-          unit_price_cents
+          unit_price_cents,
+          image_url
         ),
         profiles (
           email,
-          full_name
+          full_name,
+          phone
         )
       `,
       )
@@ -121,6 +229,7 @@ export const AdminOrdersPanel: React.FC = () => {
         ...row,
         profiles: prof,
         order_items: items,
+        metadata: (row.metadata as OrderRow['metadata']) ?? null,
       } as OrderRow;
     });
     setRows(list);
@@ -130,10 +239,80 @@ export const AdminOrdersPanel: React.FC = () => {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const [{data: ff}, {data: pay}] = await Promise.all([
+        supabase
+          .from('shop_fulfillment')
+          .select('ship_from_zip, ship_from_state, ship_from_country')
+          .eq('id', 'default')
+          .maybeSingle(),
+        supabase.from('shop_payment_settings').select('zelle_phone').eq('id', 'default').maybeSingle(),
+      ]);
+      if (cancelled) {
+        return;
+      }
+      if (ff && typeof ff === 'object') {
+        const r = ff as {
+          ship_from_zip?: string;
+          ship_from_state?: string;
+          ship_from_country?: string;
+        };
+        setShopOrigin({
+          ship_from_zip: String(r.ship_from_zip ?? '').trim() || '—',
+          ship_from_state: String(r.ship_from_state ?? '').trim() || '—',
+          ship_from_country: String(r.ship_from_country ?? '').trim() || '—',
+        });
+      }
+      const zp = (pay as {zelle_phone?: string} | null)?.zelle_phone;
+      setShopZellePhone(typeof zp === 'string' && zp.trim() ? zp.trim() : null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!supabase || !expandedId) {
+      setDetailShippingAddress(null);
+      setDetailAddressLoading(false);
+      return;
+    }
+    const o = rows.find((r) => r.id === expandedId);
+    const aid = metaString(o?.metadata ?? null, 'shipping_address_id')?.trim();
+    if (!aid) {
+      setDetailShippingAddress(null);
+      setDetailAddressLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setDetailAddressLoading(true);
+    void (async () => {
+      const {data} = await supabase
+        .from('user_addresses')
+        .select('*')
+        .eq('id', aid)
+        .maybeSingle();
+      if (cancelled) {
+        return;
+      }
+      setDetailShippingAddress((data as UserAddressRow) ?? null);
+      setDetailAddressLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [expandedId, rows]);
+
   const onStatusChange = async (orderId: string, status: OrderStatus) => {
     if (!supabase) {
       return;
     }
+    const previousStatus = rows.find((o) => o.id === orderId)?.status;
     setUpdatingId(orderId);
     const {error: uError} = await supabase
       .from('orders')
@@ -147,6 +326,13 @@ export const AdminOrdersPanel: React.FC = () => {
     setRows((prev) =>
       prev.map((o) => (o.id === orderId ? {...o, status} : o)),
     );
+    if (previousStatus !== status) {
+      void notifyOrderEmail({
+        orderId,
+        reason: 'status_updated',
+        previousStatus: previousStatus ?? null,
+      });
+    }
   };
 
   const onAcceptZellePayment = async (orderId: string) => {
@@ -283,7 +469,7 @@ export const AdminOrdersPanel: React.FC = () => {
                         </span>
                       </td>
                       <td style={thTd}>
-                        {paymentMethodLabel(o.payment_method)}
+                        {paymentMethodLabel(o.payment_method, o.metadata)}
                         {isPendingZelle && (
                           <div
                             style={{
@@ -305,7 +491,7 @@ export const AdminOrdersPanel: React.FC = () => {
                           aria-label='Estado del pedido'
                           value={o.status}
                           disabled={updatingId === o.id}
-                          style={selectStyle}
+                          style={statusSelectStyle(o.status)}
                           onChange={(e) =>
                             void onStatusChange(
                               o.id,
@@ -358,41 +544,310 @@ export const AdminOrdersPanel: React.FC = () => {
                             verticalAlign: 'top',
                           }}
                         >
-                          <div
-                            style={{
-                              fontSize: 13,
-                              marginBottom: 12,
-                              color: '#1C2D18',
-                            }}
-                          >
-                            <strong>Pedido:</strong> {humanRef} ·{' '}
-                            <strong>Estado:</strong> {statusLabel(o.status)}
-                          </div>
-                          {items.length === 0 ? (
-                            <p
-                              className='t14'
-                              style={{margin: 0, color: APP_PALETTE.priceMuted}}
-                            >
-                              Sin líneas de artículo.
-                            </p>
-                          ) : (
-                            <ul
-                              style={{
-                                margin: '0 0 16px 0',
-                                paddingLeft: 18,
-                              }}
-                            >
-                              {items.map((line) => (
-                                <li
-                                  key={line.id}
-                                  style={{marginBottom: 6}}
+                          {(() => {
+                            const meta = o.metadata ?? null;
+                            const receiver = splitFirstLast(profile?.full_name);
+                            const shipLine =
+                              metaString(meta, 'shipping_address_line')?.trim() ||
+                              '';
+                            const addrStructured =
+                              detailAddressLoading
+                                ? 'Cargando dirección…'
+                                : detailShippingAddress
+                                  ? formatAddressLine(detailShippingAddress)
+                                  : shipLine || '—';
+                            const originLine = shopOrigin
+                              ? `${shopOrigin.ship_from_zip}, ${shopOrigin.ship_from_state}, ${shopOrigin.ship_from_country}`
+                              : '—';
+                            return (
+                              <>
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    marginBottom: 14,
+                                    color: '#1C2D18',
+                                    lineHeight: 1.5,
+                                  }}
                                 >
-                                  {line.name} × {line.quantity} — USD{' '}
-                                  {formatLineMoney(line.unit_price_cents)} / u.
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                                  <div style={{marginBottom: 6}}>
+                                    <strong>Nº pedido:</strong> {humanRef}
+                                  </div>
+                                  <div style={{marginBottom: 6}}>
+                                    <strong>ID interno:</strong>{' '}
+                                    <span style={{fontFamily: 'monospace', fontSize: 12}}>
+                                      {o.id}
+                                    </span>
+                                  </div>
+                                  <div style={{marginBottom: 6}}>
+                                    <strong>Estado:</strong> {statusLabel(o.status)}
+                                  </div>
+                                  <div style={{marginBottom: 6}}>
+                                    <strong>Método de pago:</strong>{' '}
+                                    {paymentMethodLabel(o.payment_method, o.metadata)}
+                                  </div>
+                                  <div style={{marginBottom: 6}}>
+                                    <strong>Total cobrado:</strong>{' '}
+                                    {formatMoney(o.total_cents, o.currency)}
+                                  </div>
+                                  <div>
+                                    <strong>Creada:</strong>{' '}
+                                    {o.created_at
+                                      ? new Date(o.created_at).toLocaleString('es-ES')
+                                      : '—'}
+                                    {' · '}
+                                    <strong>Actualizada:</strong>{' '}
+                                    {o.updated_at
+                                      ? new Date(o.updated_at).toLocaleString('es-ES')
+                                      : '—'}
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: 'grid',
+                                    gridTemplateColumns:
+                                      'repeat(auto-fit, minmax(260px, 1fr))',
+                                    gap: 16,
+                                    marginBottom: 16,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      border: `1px solid ${APP_PALETTE.border}`,
+                                      borderRadius: 10,
+                                      padding: 12,
+                                      backgroundColor: APP_PALETTE.imageWell,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontWeight: 700,
+                                        marginBottom: 8,
+                                        color: '#1C2D18',
+                                      }}
+                                    >
+                                      Emisor (tienda)
+                                    </div>
+                                    <div className='t14' style={{marginBottom: 6}}>
+                                      <strong>Nombre comercial:</strong> Candle Laine
+                                    </div>
+                                    <div className='t14' style={{marginBottom: 6}}>
+                                      <strong>Teléfono contacto:</strong>{' '}
+                                      {shopZellePhone ?? '—'}
+                                    </div>
+                                    <div className='t14' style={{marginBottom: 0}}>
+                                      <strong>Origen de envío:</strong> {originLine}
+                                    </div>
+                                  </div>
+                                  <div
+                                    style={{
+                                      border: `1px solid ${APP_PALETTE.border}`,
+                                      borderRadius: 10,
+                                      padding: 12,
+                                      backgroundColor: APP_PALETTE.imageWell,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontWeight: 700,
+                                        marginBottom: 8,
+                                        color: '#1C2D18',
+                                      }}
+                                    >
+                                      Receptor (cliente)
+                                    </div>
+                                    <div className='t14' style={{marginBottom: 6}}>
+                                      <strong>Nombre:</strong> {receiver.first}
+                                    </div>
+                                    <div className='t14' style={{marginBottom: 6}}>
+                                      <strong>Apellidos:</strong> {receiver.last}
+                                    </div>
+                                    <div className='t14' style={{marginBottom: 6}}>
+                                      <strong>Email:</strong> {profile?.email ?? '—'}
+                                    </div>
+                                    <div className='t14' style={{marginBottom: 6}}>
+                                      <strong>Teléfono:</strong>{' '}
+                                      {profile?.phone?.trim() || '—'}
+                                    </div>
+                                    <div className='t14' style={{marginBottom: 0}}>
+                                      <strong>Dirección de envío:</strong> {addrStructured}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    fontWeight: 700,
+                                    marginBottom: 8,
+                                    color: '#1C2D18',
+                                  }}
+                                >
+                                  Productos
+                                </div>
+                                {items.length === 0 ? (
+                                  <p
+                                    className='t14'
+                                    style={{margin: '0 0 16px 0', color: APP_PALETTE.priceMuted}}
+                                  >
+                                    Sin líneas de artículo.
+                                  </p>
+                                ) : (
+                                  <table
+                                    style={{
+                                      width: '100%',
+                                      borderCollapse: 'collapse',
+                                      marginBottom: 16,
+                                      fontSize: 13,
+                                    }}
+                                  >
+                                    <thead>
+                                      <tr style={{borderBottom: `1px solid ${APP_PALETTE.border}`}}>
+                                        <th style={{textAlign: 'left', padding: '6px 8px'}}>
+                                          Artículo
+                                        </th>
+                                        <th style={{textAlign: 'right', padding: '6px 8px'}}>
+                                          Cant.
+                                        </th>
+                                        <th style={{textAlign: 'right', padding: '6px 8px'}}>
+                                          P. unit.
+                                        </th>
+                                        <th style={{textAlign: 'right', padding: '6px 8px'}}>
+                                          Subtotal línea
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {items.map((line) => {
+                                        const lineTotalCents =
+                                          line.unit_price_cents * line.quantity;
+                                        return (
+                                          <tr
+                                            key={line.id}
+                                            style={{
+                                              borderBottom: `1px solid rgba(84, 89, 83, 0.25)`,
+                                            }}
+                                          >
+                                            <td style={{padding: '8px', verticalAlign: 'middle'}}>
+                                              <div
+                                                style={{
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  gap: 10,
+                                                }}
+                                              >
+                                                {line.image_url ? (
+                                                  <img
+                                                    src={line.image_url}
+                                                    alt=''
+                                                    style={{
+                                                      width: 40,
+                                                      height: 40,
+                                                      objectFit: 'cover',
+                                                      borderRadius: 6,
+                                                      border: `1px solid ${APP_PALETTE.border}`,
+                                                    }}
+                                                  />
+                                                ) : null}
+                                                <span>{line.name}</span>
+                                              </div>
+                                            </td>
+                                            <td
+                                              style={{
+                                                padding: '8px',
+                                                textAlign: 'right',
+                                                whiteSpace: 'nowrap',
+                                              }}
+                                            >
+                                              {line.quantity}
+                                            </td>
+                                            <td
+                                              style={{
+                                                padding: '8px',
+                                                textAlign: 'right',
+                                                whiteSpace: 'nowrap',
+                                              }}
+                                            >
+                                              USD {formatLineMoney(line.unit_price_cents)}
+                                            </td>
+                                            <td
+                                              style={{
+                                                padding: '8px',
+                                                textAlign: 'right',
+                                                whiteSpace: 'nowrap',
+                                              }}
+                                            >
+                                              USD {formatLineMoney(lineTotalCents)}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                )}
+
+                                <div
+                                  style={{
+                                    border: `1px solid ${APP_PALETTE.border}`,
+                                    borderRadius: 10,
+                                    padding: 12,
+                                    backgroundColor: 'rgba(76, 119, 92, 0.08)',
+                                    marginBottom: 16,
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  <div style={{fontWeight: 700, marginBottom: 8}}>
+                                    Desglose de importes (checkout)
+                                  </div>
+                                  <div className='t14' style={{marginBottom: 4}}>
+                                    <strong>Mercancía:</strong> USD{' '}
+                                    {formatMetaCents(
+                                      metaString(meta, 'merchandise_total_cents'),
+                                    )}
+                                  </div>
+                                  <div className='t14' style={{marginBottom: 4}}>
+                                    <strong>Envío:</strong> USD{' '}
+                                    {formatMetaCents(metaString(meta, 'shipping_cents'))}
+                                  </div>
+                                  <div className='t14' style={{marginBottom: 4}}>
+                                    <strong>Procesamiento (Tax):</strong> USD{' '}
+                                    {formatMetaCents(
+                                      metaString(meta, 'processing_tax_cents'),
+                                    )}
+                                  </div>
+                                  <div className='t14' style={{marginBottom: 0}}>
+                                    <strong>Total cobrado:</strong>{' '}
+                                    {formatMoney(o.total_cents, o.currency)}
+                                  </div>
+                                  {metaString(meta, 'stripe_payment_intent_id') ? (
+                                    <div
+                                      className='t14'
+                                      style={{
+                                        marginTop: 10,
+                                        wordBreak: 'break-all',
+                                        opacity: 0.85,
+                                      }}
+                                    >
+                                      <strong>Stripe PI:</strong>{' '}
+                                      {metaString(meta, 'stripe_payment_intent_id')}
+                                    </div>
+                                  ) : null}
+                                  {metaString(meta, 'stripe_charge_id') ? (
+                                    <div
+                                      className='t14'
+                                      style={{
+                                        marginTop: 4,
+                                        wordBreak: 'break-all',
+                                        opacity: 0.85,
+                                      }}
+                                    >
+                                      <strong>Stripe charge:</strong>{' '}
+                                      {metaString(meta, 'stripe_charge_id')}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </>
+                            );
+                          })()}
                           {o.status === 'pending_payment' &&
                             o.payment_method === 'zelle' && (
                               <div>

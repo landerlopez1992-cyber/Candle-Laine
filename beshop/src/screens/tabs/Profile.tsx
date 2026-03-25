@@ -1,5 +1,5 @@
 import type {User} from '@supabase/supabase-js';
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {hooks} from '../../hooks';
 import {items} from '../../items';
@@ -10,7 +10,13 @@ import {components} from '../../components';
 import {setColor} from '../../store/slices/bgSlice';
 import {isSupabaseConfigured, supabase} from '../../supabaseClient';
 import {isAdminEmail} from '../../utils/adminAccess';
+import {uploadAndSaveProfileAvatar} from '../../utils/uploadProfileAvatar';
 import { APP_PALETTE } from '../../theme/appPalette';
+
+type ProfileRow = {
+  full_name: string | null;
+  avatar_url: string | null;
+};
 
 function getDisplayName(user: User): string {
   const meta = user.user_metadata as Record<string, unknown> | undefined;
@@ -36,6 +42,11 @@ export const Profile: React.FC = () => {
   const navigate = hooks.useNavigate();
 
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false);
+  const [profileRow, setProfileRow] = useState<ProfileRow | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -61,10 +72,38 @@ export const Profile: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const displayName = useMemo(
-    () => (user ? getDisplayName(user) : ''),
-    [user],
-  );
+  useEffect(() => {
+    if (!supabase || !user) {
+      setProfileRow(null);
+      return;
+    }
+    let cancelled = false;
+    void supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({data}) => {
+        if (cancelled || !data) {
+          return;
+        }
+        setProfileRow(data as ProfileRow);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const displayName = useMemo(() => {
+    if (!user) {
+      return '';
+    }
+    const fromProfile = profileRow?.full_name?.trim();
+    if (fromProfile) {
+      return fromProfile;
+    }
+    return getDisplayName(user);
+  }, [user, profileRow]);
 
   const initialLetter = useMemo(
     () => (user ? getInitialLetter(displayName) : '?'),
@@ -139,46 +178,111 @@ export const Profile: React.FC = () => {
       );
     }
 
+    const avatarSrc = profileRow?.avatar_url?.trim();
+
+    const onAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file || !user) {
+        return;
+      }
+      setAvatarError(null);
+      setAvatarBusy(true);
+      const result = await uploadAndSaveProfileAvatar(file, user.id);
+      setAvatarBusy(false);
+      if (!result.ok) {
+        setAvatarError(result.message);
+        return;
+      }
+      setProfileRow((prev) => ({
+        full_name: prev?.full_name ?? null,
+        avatar_url: result.publicUrl,
+      }));
+    };
+
     return (
-      <Link
+      <div
+        className='container'
         style={{
-          display: 'inline-flex',
+          display: 'flex',
           marginBottom: 20,
           marginTop: 27,
           flexDirection: 'column',
           alignItems: 'center',
         }}
-        to='/profile/edit'
-        className='container clickable'
       >
-        <div
+        <input
+          ref={avatarInputRef}
+          type='file'
+          accept='image/jpeg,image/png,image/webp'
+          style={{display: 'none'}}
+          onChange={onAvatarFile}
+        />
+        <button
+          type='button'
+          className='clickable'
+          disabled={avatarBusy}
+          onClick={() => setShowAvatarMenu(true)}
           style={{
-            width: 96,
-            height: 96,
-            alignSelf: 'center',
-            border: '6px solid var(--accent-color)',
-            borderRadius: '50%',
-            marginBottom: 16,
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'var(--pastel-color)',
-            overflow: 'hidden',
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            width: '100%',
+            opacity: avatarBusy ? 0.75 : 1,
           }}
         >
-          <span
+          <div
             style={{
-              fontSize: 36,
-              fontWeight: 600,
-              color: 'var(--main-color)',
+              width: 96,
+              height: 96,
+              alignSelf: 'center',
+              border: '6px solid var(--accent-color)',
+              borderRadius: '50%',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'var(--pastel-color)',
+              overflow: 'hidden',
             }}
           >
-            {initialLetter}
-          </span>
-        </div>
-        <h3 style={{textAlign: 'center'}}>{displayName}</h3>
-        <span className='t14'>{user.email ?? ''}</span>
-      </Link>
+            {avatarSrc ? (
+              <img
+                alt=''
+                src={avatarSrc}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  fontSize: 36,
+                  fontWeight: 600,
+                  color: 'var(--main-color)',
+                }}
+              >
+                {initialLetter}
+              </span>
+            )}
+          </div>
+          <h3 style={{textAlign: 'center'}}>{displayName}</h3>
+          <span className='t14'>{user.email ?? ''}</span>
+        </button>
+        {avatarError ? (
+          <p
+            className='t14'
+            style={{color: '#f0c4b8', marginTop: 8, textAlign: 'center'}}
+          >
+            {avatarError}
+          </p>
+        ) : null}
+      </div>
     );
   };
 
@@ -235,6 +339,113 @@ export const Profile: React.FC = () => {
           }}
           isLast={true}
         />
+      </div>
+    );
+  };
+
+  const renderAvatarMenu = (): JSX.Element | null => {
+    if (!showAvatarMenu) {
+      return null;
+    }
+
+    /** Matches `renderZellePaymentDialog` in `Checkout.tsx` (cream card, title, compact buttons). */
+    const btnZelle: React.CSSProperties = {
+      textTransform: 'none',
+      fontSize: 16,
+      width: '100%',
+      maxWidth: 280,
+      marginBottom: 0,
+    };
+
+    return (
+      <div
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby='avatar-menu-title'
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 102,
+          backgroundColor: 'rgba(0, 0, 0, 0.55)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          boxSizing: 'border-box',
+        }}
+        onClick={() => setShowAvatarMenu(false)}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 336,
+            borderRadius: 12,
+            border: `1px solid ${APP_PALETTE.border}`,
+            backgroundColor: APP_PALETTE.cartCardSurface,
+            padding: '24px 22px 20px',
+            boxSizing: 'border-box',
+            textAlign: 'center',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2
+            id='avatar-menu-title'
+            style={{
+              margin: '0 0 10px',
+              fontFamily: 'League Spartan, sans-serif',
+              fontSize: 20,
+              fontWeight: 600,
+              color: '#1C2D18',
+              lineHeight: 1.3,
+              textAlign: 'center',
+            }}
+          >
+            Profile photo
+          </h2>
+          <p
+            className='t14'
+            style={{
+              margin: '0 0 16px',
+              color: 'var(--text-on-light)',
+              lineHeight: 1.55,
+              textAlign: 'center',
+            }}
+          >
+            Choose whether to update your photo or edit your profile details.
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            <components.Button
+              text='Change profile photo'
+              onClick={() => {
+                setShowAvatarMenu(false);
+                avatarInputRef.current?.click();
+              }}
+              containerStyle={btnZelle}
+            />
+            <components.Button
+              text='Edit profile'
+              colorScheme='secondary'
+              onClick={() => {
+                setShowAvatarMenu(false);
+                navigate(Routes.EditProfile);
+              }}
+              containerStyle={btnZelle}
+            />
+            <components.Button
+              text='Cancel'
+              colorScheme='secondary'
+              onClick={() => setShowAvatarMenu(false)}
+              containerStyle={btnZelle}
+            />
+          </div>
+        </div>
       </div>
     );
   };
@@ -331,6 +542,7 @@ export const Profile: React.FC = () => {
       {renderHeader()}
       {renderContent()}
       {renderFooter()}
+      {renderAvatarMenu()}
       {renderModal()}
     </>
   );

@@ -6,8 +6,9 @@ import type {ShopBannerSlide} from '../../types/homeBanner';
 import {getShopMediaPublicUrl, uploadShopImage} from '../../utils/shopMedia';
 import {parseBannerSlides} from '../../utils/homeBannerSlides';
 import {formatSupabaseError} from '../../utils/supabaseError';
+import {AdminHomeCountdownForm} from './AdminHomeCountdownForm';
 
-type PromoTab = 'banner1' | 'banner2';
+type PromoTab = 'banner1' | 'banner2' | 'countdown';
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -206,13 +207,13 @@ export const AdminPromotionsPanel: React.FC = () => {
           color: APP_PALETTE.textMuted,
         }}
       >
-        Banners del inicio: varias imágenes por bloque, rotación automática y
-        tiempo entre diapositivas.
+        Banners del inicio, cuenta regresiva con producto y reloj en la página
+        principal.
       </p>
 
       <div
         role='tablist'
-        aria-label='Banners del home'
+        aria-label='Promociones del home'
         style={{
           display: 'flex',
           gap: 8,
@@ -224,6 +225,7 @@ export const AdminPromotionsPanel: React.FC = () => {
           [
             {id: 'banner1' as const, label: 'Banner 1'},
             {id: 'banner2' as const, label: 'Banner 2'},
+            {id: 'countdown' as const, label: 'Cuenta regresiva'},
           ] as const
         ).map((t) => {
           const active = tab === t.id;
@@ -256,13 +258,13 @@ export const AdminPromotionsPanel: React.FC = () => {
         })}
       </div>
 
-      {loading && (
+      {loading && tab !== 'countdown' && (
         <p className='t16' style={{color: APP_PALETTE.textMuted}}>
           Cargando…
         </p>
       )}
 
-      {!loading && error && (
+      {!loading && error && tab !== 'countdown' && (
         <p
           className='t16'
           style={{color: '#a33', marginBottom: 16, maxWidth: 720}}
@@ -271,7 +273,9 @@ export const AdminPromotionsPanel: React.FC = () => {
         </p>
       )}
 
-      {!loading && (
+      {tab === 'countdown' && <AdminHomeCountdownForm />}
+
+      {!loading && tab !== 'countdown' && (
         <div style={card}>
           <h2
             style={{

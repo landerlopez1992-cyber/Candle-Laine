@@ -8,11 +8,23 @@ import {svg} from '../assets/svg';
 import {actions} from '../store/actions';
 import {components} from '../components';
 import {supabase} from '../supabaseClient';
-
-import background from '../assets/bg/07.png';
-import { APP_PALETTE } from '../theme/appPalette';
+import {APP_PALETTE} from '../theme/appPalette';
 
 const SIGNUP_EMAIL_STORAGE_KEY = 'candle_signup_email';
+
+const cardSurface: React.CSSProperties = {
+  backgroundColor: APP_PALETTE.cartCardSurface,
+  borderRadius: 12,
+  border: `1px solid ${APP_PALETTE.border}`,
+  padding: '24px 20px',
+};
+
+const inputWrap: React.CSSProperties = {
+  marginBottom: 10,
+  borderRadius: 8,
+  backgroundColor: APP_PALETTE.inputSurface,
+  border: `1px solid ${APP_PALETTE.border}`,
+};
 
 export const SignUp: React.FC = () => {
   const dispatch = hooks.useDispatch();
@@ -86,8 +98,9 @@ export const SignUp: React.FC = () => {
     return (
       <components.Header
         showGoBack={true}
+        title='Sign Up'
         headerStyle={{
-          backgroundColor: 'var(--white-color)',
+          backgroundColor: APP_PALETTE.headerBand,
         }}
       />
     );
@@ -95,111 +108,103 @@ export const SignUp: React.FC = () => {
 
   const renderContent = (): JSX.Element => {
     return (
-      <main className='scrollable'>
+      <main
+        className='scrollable'
+        style={{
+          backgroundColor: APP_PALETTE.appShell,
+          paddingTop: 16,
+          paddingBottom: 28,
+          minHeight: 'calc(100vh - 120px)',
+          boxSizing: 'border-box',
+        }}
+      >
         <div
           style={{
-            backgroundImage: `url(${background})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            marginTop: 16,
             marginLeft: 20,
             marginRight: 20,
-            paddingBottom: 20,
-            paddingLeft: 20,
-            paddingRight: 20,
-            paddingTop: '16%',
           }}
         >
-          <h1
-            style={{
-              textAlign: 'center',
-              marginBottom: 16,
-              textTransform: 'capitalize',
-            }}
-          >
-            Sign up
-          </h1>
-          <span
-            className='t16'
-            style={{textAlign: 'center', display: 'block', marginBottom: 30}}
-          >
-            Create an account with your email
-          </span>
-          <custom.InputField
-            containerStyle={{marginBottom: 10}}
-            placeholder='Enter your name'
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            autoComplete='name'
-          />
-          <custom.InputField
-            containerStyle={{marginBottom: 10}}
-            placeholder='Enter your email'
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete='email'
-            inputMode='email'
-          />
-          <custom.InputField
-            type='password'
-            containerStyle={{marginBottom: 10}}
-            placeholder='Enter your password'
-            icon={<svg.EyeOffSvg />}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete='new-password'
-          />
-          <custom.InputField
-            type='password'
-            containerStyle={{marginBottom: 20}}
-            placeholder='Confirm your password'
-            icon={<svg.EyeOffSvg />}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            autoComplete='new-password'
-          />
-          {error && (
+          <div style={cardSurface}>
             <p
               className='t16'
               style={{
-                color: 'var(--accent-color)',
-                marginBottom: 16,
                 textAlign: 'center',
+                marginTop: 0,
+                marginBottom: 24,
+                color: APP_PALETTE.textMuted,
+                lineHeight: 1.5,
               }}
             >
-              {error}
+              Create an account with your email
             </p>
-          )}
-          <components.Button
-            text={loading ? 'Please wait…' : 'Sign Up'}
-            onClick={handleSignUp}
-            containerStyle={{marginBottom: 24}}
-          />
-          <div
-            className='t16'
-            style={{textAlign: 'center'}}
-          >
-            Already have an account?{' '}
-            <Link
-              to={Routes.SignIn}
-              style={{color: 'var(--accent-color)'}}
+            <custom.InputField
+              containerStyle={inputWrap}
+              placeholder='Enter your name'
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              autoComplete='name'
+            />
+            <custom.InputField
+              containerStyle={inputWrap}
+              placeholder='Enter your email'
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete='email'
+              inputMode='email'
+            />
+            <custom.InputField
+              type='password'
+              containerStyle={inputWrap}
+              placeholder='Enter your password'
+              icon={<svg.EyeOffSvg />}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete='new-password'
+            />
+            <custom.InputField
+              type='password'
+              containerStyle={{...inputWrap, marginBottom: 20}}
+              placeholder='Confirm your password'
+              icon={<svg.EyeOffSvg />}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete='new-password'
+            />
+            {error && (
+              <p
+                className='t14'
+                style={{
+                  color: APP_PALETTE.accent,
+                  marginBottom: 16,
+                  textAlign: 'center',
+                }}
+              >
+                {error}
+              </p>
+            )}
+            <components.Button
+              text={loading ? 'Please wait…' : 'Sign Up'}
+              onClick={handleSignUp}
+              containerStyle={{marginBottom: 20}}
+            />
+            <div
+              className='t16'
+              style={{
+                textAlign: 'center',
+                color: APP_PALETTE.textMuted,
+              }}
             >
-              Sign in.
-            </Link>{' '}
+              Already have an account?{' '}
+              <Link
+                to={Routes.SignIn}
+                style={{color: APP_PALETTE.accent}}
+              >
+                Sign in
+              </Link>
+            </div>
           </div>
         </div>
       </main>
-    );
-  };
-
-  const renderIndent = (): JSX.Element => {
-    return (
-      <div
-        style={{
-          height: 34,
-          backgroundColor: 'var(--white-color)',
-        }}
-      />
     );
   };
 
@@ -207,7 +212,6 @@ export const SignUp: React.FC = () => {
     <>
       {renderHeader()}
       {renderContent()}
-      {renderIndent()}
     </>
   );
 };

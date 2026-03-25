@@ -34,6 +34,7 @@ export type OrderRowDb = {
   currency: string;
   human_order_number: string | null;
   payment_method: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
   order_items?: OrderItemJoin[] | null;
 };
@@ -129,6 +130,14 @@ export function mapDbStatusToOrderUi(
   }
 }
 
+function paymentDisplayFromMetadata(meta: unknown): string | null {
+  if (!meta || typeof meta !== 'object') {
+    return null;
+  }
+  const v = (meta as Record<string, unknown>).payment_method_display;
+  return typeof v === 'string' && v.trim() ? v.trim() : null;
+}
+
 export function mapOrderRowToOrderType(row: unknown): OrderType {
   const r = row as Record<string, unknown>;
   const items = asOrderItemArray(r.order_items);
@@ -143,6 +152,7 @@ export function mapOrderRowToOrderType(row: unknown): OrderType {
     status: mapDbStatusToOrderUi(String(r.status)),
     total: (r.total_cents as number) / 100,
     products,
+    paymentMethodDisplay: paymentDisplayFromMetadata(r.metadata),
   };
 }
 

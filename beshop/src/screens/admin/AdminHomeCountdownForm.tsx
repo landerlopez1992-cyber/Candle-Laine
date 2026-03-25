@@ -75,6 +75,7 @@ export const AdminHomeCountdownForm: React.FC = () => {
   const [enabled, setEnabled] = useState(false);
   const [productId, setProductId] = useState<string>('');
   const [endsAtLocal, setEndsAtLocal] = useState('');
+  const [headlineText, setHeadlineText] = useState('');
   const [bodyText, setBodyText] = useState('');
   const [buttonLabel, setButtonLabel] = useState('Buy now');
   const [durDays, setDurDays] = useState(0);
@@ -114,7 +115,7 @@ export const AdminHomeCountdownForm: React.FC = () => {
     const {data, error: qErr} = await supabase
       .from('shop_home_countdown')
       .select(
-        'id, enabled, product_id, ends_at, body_text, button_label, updated_at',
+        'id, enabled, product_id, ends_at, headline_text, body_text, button_label, updated_at',
       )
       .eq('id', 'default')
       .maybeSingle();
@@ -129,6 +130,9 @@ export const AdminHomeCountdownForm: React.FC = () => {
       setEnabled(Boolean(row.enabled));
       setProductId(row.product_id ?? '');
       setEndsAtLocal(toDatetimeLocalValue(row.ends_at));
+      setHeadlineText(
+        (row as ShopHomeCountdownRow).headline_text?.trim() ?? '',
+      );
       setBodyText(row.body_text ?? '');
       setButtonLabel(row.button_label?.trim() || 'Buy now');
     }
@@ -180,6 +184,7 @@ export const AdminHomeCountdownForm: React.FC = () => {
         enabled,
         product_id: productId.trim() || null,
         ends_at: enabled ? endsIso : null,
+        headline_text: headlineText.trim(),
         body_text: bodyText.trim(),
         button_label: buttonLabel.trim() || 'Buy now',
       },
@@ -341,15 +346,28 @@ export const AdminHomeCountdownForm: React.FC = () => {
             </button>
           </div>
 
+          <label style={labelStyle} htmlFor='admin-cd-headline'>
+            Texto 1 — cabecera (título grande, ej. Cuenta regresiva)
+          </label>
+          <input
+            id='admin-cd-headline'
+            type='text'
+            value={headlineText}
+            onChange={(e) => setHeadlineText(e.target.value)}
+            placeholder='Cuenta regresiva'
+            style={{...inputStyle, marginBottom: 14, fontSize: 17, fontWeight: 600}}
+          />
+
           <label style={labelStyle} htmlFor='admin-cd-body'>
-            Texto (ej. envío gratis por tiempo limitado)
+            Texto 2 — descripción (más pequeño, ej. oferta con envío gratis)
           </label>
           <textarea
             id='admin-cd-body'
             value={bodyText}
             onChange={(e) => setBodyText(e.target.value)}
-            rows={4}
-            style={{...inputStyle, marginBottom: 16, resize: 'vertical'}}
+            rows={3}
+            placeholder='Oferta: compra este producto con envío gratis, tiempo limitado.'
+            style={{...inputStyle, marginBottom: 16, resize: 'vertical', fontSize: 14}}
           />
 
           <label style={labelStyle} htmlFor='admin-cd-btn'>

@@ -9,7 +9,7 @@ export const PaymentPlusSvg: React.FC = () => {
       fill='none'
     >
       <g
-        stroke='#222'
+        stroke='currentColor'
         strokeLinecap='round'
         strokeLinejoin='round'
         strokeWidth={1.2}

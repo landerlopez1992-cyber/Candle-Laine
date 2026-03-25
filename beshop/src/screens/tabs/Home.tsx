@@ -12,7 +12,9 @@ import {ProductType} from '../../types';
 import {components} from '../../components';
 import {actions} from '../../store/actions';
 import {useBanners} from '../../hooks/useBanners';
+import {useHomeCountdown} from '../../hooks/useHomeCountdown';
 import {hasHomeStoryContent, useHomeStory} from '../../hooks/useHomeStory';
+import {HomeCountdownBlock} from '../../components/HomeCountdownBlock';
 import {useProducts} from '../../hooks/useProducts';
 import {APP_PALETTE} from '../../theme/appPalette';
 import type {HomeBannerView} from '../../types/homeBanner';
@@ -174,12 +176,11 @@ export const Home: React.FC = () => {
   const {bannersLoading, banner1, banner2} = useBanners();
   const {productsLoading, products} = useProducts();
   const {story, storyLoading} = useHomeStory();
+  const {display: countdownDisplay, loading: countdownLoading} =
+    useHomeCountdown();
 
   const discountedProducts = useMemo(
-    () =>
-      products.filter(
-        (p) => p.oldPrice != null && p.oldPrice > p.price,
-      ),
+    () => products.filter((p) => p.flag_discount === true),
     [products],
   );
 
@@ -930,6 +931,9 @@ export const Home: React.FC = () => {
         {renderBannerBlock(banner2, 'b2')}
         {renderNewArrivals()}
         {renderDiscountedItems()}
+        {!countdownLoading && countdownDisplay ? (
+          <HomeCountdownBlock data={countdownDisplay} />
+        ) : null}
         {renderOurStory()}
         {renderHomeLegalStrip()}
       </main>

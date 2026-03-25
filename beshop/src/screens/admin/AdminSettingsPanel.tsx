@@ -1,13 +1,8 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {useSearchParams} from 'react-router-dom';
 
 import {supabase} from '../../supabaseClient';
 import {APP_PALETTE} from '../../theme/appPalette';
-import type {ShopPaymentSettingsRow} from '../../types/shop';
-import {
-  completeStripeConnectOAuth,
-  startStripeConnectOAuth,
-} from '../../utils/stripeConnectAdmin';
+import type {ShopPaymentSettingsRow, ShopStripeRuntimeRow} from '../../types/shop';
 import {formatSupabaseError} from '../../utils/supabaseError';
 import {AdminMuralSettings} from './AdminMuralSettings';
 
@@ -55,33 +50,27 @@ const card: React.CSSProperties = {
   maxWidth: 640,
 };
 
-const STRIPE_OAUTH_START_PREFIX = 'stripe_oauth_start_';
-
 export const AdminSettingsPanel: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const [tab, setTab] = useState<SettingsTab>(() =>
-    searchParams.get('code') && searchParams.get('state') ? 'stripe' : 'payment',
-  );
+  const [tab, setTab] = useState<SettingsTab>('payment');
 
   const [zelleEnabled, setZelleEnabled] = useState(false);
   const [zellePhone, setZellePhone] = useState('');
   const [zelleInstructions, setZelleInstructions] = useState('');
 
-  const [stripeEnabled, setStripeEnabled] = useState(false);
-  const [stripeAccountId, setStripeAccountId] = useState('');
-  const [stripeLivemode, setStripeLivemode] = useState(false);
+  const [stripeUseTestMode, setStripeUseTestMode] = useState(true);
+  const [stripePublishableKeyTest, setStripePublishableKeyTest] = useState('');
+  const [stripePublishableKeyLive, setStripePublishableKeyLive] = useState('');
+  const [stripeSecretKeyTest, setStripeSecretKeyTest] = useState('');
+  const [stripeSecretKeyLive, setStripeSecretKeyLive] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedOk, setSavedOk] = useState(false);
 
-  const [stripeLinkBusy, setStripeLinkBusy] = useState(false);
   const [stripeOauthError, setStripeOauthError] = useState<string | null>(null);
   const [stripeSavedOk, setStripeSavedOk] = useState(false);
-  const [stripeSavingToggle, setStripeSavingToggle] = useState(false);
-  const [stripeDisconnecting, setStripeDisconnecting] = useState(false);
+  const [stripeRuntimeSaving, setStripeRuntimeSaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!supabase) {
@@ -109,48 +98,32 @@ export const AdminSettingsPanel: React.FC = () => {
       setZelleEnabled(row.zelle_enabled);
       setZellePhone(row.zelle_phone ?? '');
       setZelleInstructions(row.zelle_instructions ?? '');
-      setStripeEnabled(row.stripe_enabled ?? false);
-      setStripeAccountId(row.stripe_connect_account_id ?? '');
-      setStripeLivemode(row.stripe_livemode ?? false);
+    }
+
+    const {data: runtimeData, error: runtimeErr} = await supabase
+      .from('shop_stripe_runtime')
+      .select(
+        'id, use_test_mode, publishable_key_test, publishable_key_live, secret_key_test, secret_key_live, updated_at',
+      )
+      .eq('id', 'default')
+      .maybeSingle();
+    if (runtimeErr) {
+      setError(formatSupabaseError(runtimeErr));
+      return;
+    }
+    const runtime = runtimeData as ShopStripeRuntimeRow | null;
+    if (runtime) {
+      setStripeUseTestMode(runtime.use_test_mode ?? true);
+      setStripePublishableKeyTest(runtime.publishable_key_test ?? '');
+      setStripePublishableKeyLive(runtime.publishable_key_live ?? '');
+      setStripeSecretKeyTest(runtime.secret_key_test ?? '');
+      setStripeSecretKeyLive(runtime.secret_key_live ?? '');
     }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
-    if (!code || !state) {
-      return;
-    }
-    const startKey = `${STRIPE_OAUTH_START_PREFIX}${code}`;
-    if (sessionStorage.getItem(startKey)) {
-      setSearchParams({}, {replace: true});
-      return;
-    }
-    sessionStorage.setItem(startKey, '1');
-    setTab('stripe');
-    setSearchParams({}, {replace: true});
-    setStripeOauthError(null);
-    setStripeLinkBusy(true);
-    void completeStripeConnectOAuth(code, state).then((r) => {
-      setStripeLinkBusy(false);
-      if (r.ok) {
-        setStripeSavedOk(true);
-        window.setTimeout(() => setStripeSavedOk(false), 4000);
-        void load();
-      } else {
-        sessionStorage.removeItem(startKey);
-        setStripeOauthError(
-          r.error === 'invalid_state'
-            ? 'La sesión de vinculación caducó o no coincide. Inténtalo de nuevo.'
-            : r.error ?? 'No se pudo completar la vinculación con Stripe.',
-        );
-      }
-    });
-  }, [searchParams, setSearchParams, load]);
 
   const savePayment = async () => {
     if (!supabase) {
@@ -178,61 +151,30 @@ export const AdminSettingsPanel: React.FC = () => {
     window.setTimeout(() => setSavedOk(false), 3500);
   };
 
-  const stripeClientConfigured = Boolean(
-    process.env.REACT_APP_STRIPE_CONNECT_CLIENT_ID?.trim(),
-  );
-
-  const onLinkStripe = () => {
-    setStripeOauthError(null);
-    if (!startStripeConnectOAuth()) {
-      setStripeOauthError(
-        'Falta REACT_APP_STRIPE_CONNECT_CLIENT_ID en el entorno del front (ID de cliente Connect, ca_…).',
-      );
-    }
-  };
-
-  const saveStripeToggle = async () => {
-    if (!supabase || !stripeAccountId.trim()) {
+  const saveStripeRuntime = async () => {
+    if (!supabase) {
       return;
     }
-    setStripeSavingToggle(true);
     setStripeOauthError(null);
-    const {error: uError} = await supabase
-      .from('shop_payment_settings')
-      .update({stripe_enabled: stripeEnabled})
-      .eq('id', 'default');
-    setStripeSavingToggle(false);
+    setStripeRuntimeSaving(true);
+    const {error: uError} = await supabase.from('shop_stripe_runtime').upsert(
+      {
+        id: 'default',
+        use_test_mode: stripeUseTestMode,
+        publishable_key_test: stripePublishableKeyTest.trim(),
+        publishable_key_live: stripePublishableKeyLive.trim(),
+        secret_key_test: stripeSecretKeyTest.trim(),
+        secret_key_live: stripeSecretKeyLive.trim(),
+      },
+      {onConflict: 'id'},
+    );
+    setStripeRuntimeSaving(false);
     if (uError) {
       setStripeOauthError(formatSupabaseError(uError));
       return;
     }
     setStripeSavedOk(true);
     window.setTimeout(() => setStripeSavedOk(false), 3500);
-  };
-
-  const disconnectStripe = async () => {
-    if (!supabase) {
-      return;
-    }
-    setStripeDisconnecting(true);
-    setStripeOauthError(null);
-    const {error: uError} = await supabase
-      .from('shop_payment_settings')
-      .update({
-        stripe_enabled: false,
-        stripe_connect_account_id: '',
-        stripe_livemode: false,
-      })
-      .eq('id', 'default');
-    setStripeDisconnecting(false);
-    if (uError) {
-      setStripeOauthError(formatSupabaseError(uError));
-      return;
-    }
-    setStripeEnabled(false);
-    setStripeAccountId('');
-    setStripeLivemode(false);
-    void load();
   };
 
   return (
@@ -509,255 +451,262 @@ export const AdminSettingsPanel: React.FC = () => {
       )}
 
       {tab === 'stripe' && (
-        <div style={card}>
-          <h2
+        <div style={{maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 16}}>
+
+          {/* Badge modo activo — igual que GoodBarber */}
+          <div
             style={{
-              margin: 0,
-              marginBottom: 8,
-              fontFamily: 'League Spartan, sans-serif',
-              fontSize: 20,
-              fontWeight: 600,
-              color: '#1C2D18',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '12px 16px',
+              borderRadius: 8,
+              border: `1px solid ${stripeUseTestMode ? '#d97706' : APP_PALETTE.accentJade}`,
+              backgroundColor: stripeUseTestMode
+                ? 'rgba(217,119,6,0.08)'
+                : 'rgba(76,119,92,0.12)',
             }}
           >
-            Stripe
-          </h2>
-          <p
-            className='t14'
-            style={{
-              margin: 0,
-              marginBottom: 22,
-              lineHeight: 1.55,
-              color: APP_PALETTE.priceMuted,
-            }}
-          >
-            Vincula tu cuenta de Stripe Connect para recibir pagos con tarjeta en
-            la app. Al pulsar «Linkear cuenta» irás a Stripe para iniciar sesión y
-            elegir la cuenta; al volver aquí guardamos el identificador de la cuenta
-            de forma segura en el servidor.
-          </p>
-
-          {loading && (
-            <p className='t16' style={{color: APP_PALETTE.priceMuted}}>
-              Cargando…
-            </p>
-          )}
-
-          {!loading && stripeLinkBusy && (
-            <p className='t16' style={{color: APP_PALETTE.priceMuted, marginBottom: 16}}>
-              Completando vinculación con Stripe…
-            </p>
-          )}
-
-          {!loading && !stripeLinkBusy && stripeOauthError && (
-            <p
-              className='t16'
-              style={{color: '#a33', marginBottom: 16, maxWidth: 560}}
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                backgroundColor: stripeUseTestMode ? '#d97706' : APP_PALETTE.accentJade,
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontFamily: 'Lato, sans-serif',
+                fontSize: 14,
+                color: '#1C2D18',
+              }}
             >
-              {stripeOauthError}
+              Tu modo de aplicación es:{' '}
+              <strong style={{color: stripeUseTestMode ? '#d97706' : APP_PALETTE.accentJade}}>
+                {stripeUseTestMode ? 'PRUEBA' : 'EN VIVO'}
+              </strong>
+            </span>
+          </div>
+
+          {/* Bloque principal */}
+          <div style={card}>
+            <h2
+              style={{
+                margin: '0 0 4px',
+                fontFamily: 'League Spartan, sans-serif',
+                fontSize: 18,
+                fontWeight: 700,
+                color: '#1C2D18',
+              }}
+            >
+              Conexión a proveedores de pago
+            </h2>
+            <p
+              className='t13'
+              style={{margin: '0 0 20px', color: APP_PALETTE.priceMuted, lineHeight: 1.55}}
+            >
+              Permite que los proveedores de pago acepten tarjetas de crédito durante el pago.
             </p>
-          )}
 
-          {!loading && !stripeLinkBusy && (
-            <>
-              {stripeAccountId ? (
-                <div style={{marginBottom: 22, maxWidth: 560}}>
-                  <p
-                    className='t14'
-                    style={{
-                      margin: '0 0 8px',
-                      color: APP_PALETTE.priceMuted,
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    Cuenta vinculada
-                  </p>
-                  <p
-                    className='t14'
-                    style={{
-                      margin: 0,
-                      fontFamily: 'monospace',
-                      wordBreak: 'break-all',
-                      color: '#1C2D18',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {stripeAccountId}
-                  </p>
-                  <p className='t12' style={{margin: '8px 0 0', color: APP_PALETTE.priceMuted}}>
-                    Modo: {stripeLivemode ? 'Live' : 'Test'}
-                  </p>
-                </div>
-              ) : (
-                <p
-                  className='t14'
-                  style={{
-                    margin: '0 0 18px',
-                    color: APP_PALETTE.priceMuted,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Aún no hay cuenta vinculada. Registra en el{' '}
-                  <strong style={{color: '#1C2D18'}}>redirect URI</strong> de Stripe
-                  Connect:{' '}
-                  <span style={{fontFamily: 'monospace', fontSize: 12}}>
-                    {typeof window !== 'undefined'
-                      ? `${window.location.origin}/admin`
-                      : '…/admin'}
-                  </span>
-                </p>
-              )}
+            {/* Separador */}
+            <div style={{height: 1, backgroundColor: APP_PALETTE.border, marginBottom: 20}} />
 
-              <div
+            {/* Stripe logo + descripción */}
+            <div style={{marginBottom: 8}}>
+              <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                  marginBottom: 22,
-                  maxWidth: 560,
-                  opacity: stripeAccountId ? 1 : 0.45,
+                  fontFamily: 'Lato, sans-serif',
+                  fontSize: 22,
+                  fontWeight: 900,
+                  color: '#635bff',
+                  letterSpacing: '-0.5px',
                 }}
               >
-                <div>
-                  <span
-                    style={{
-                      fontFamily: 'Lato, sans-serif',
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: '#1C2D18',
-                    }}
-                  >
-                    Activar Stripe en la tienda
-                  </span>
-                  <p
-                    className='t14'
-                    style={{
-                      margin: '4px 0 0',
-                      color: APP_PALETTE.priceMuted,
-                      lineHeight: 1.45,
-                    }}
-                  >
-                    Solo disponible con cuenta vinculada. El checkout usará esta
-                    cuenta cuando integremos el cobro con tarjeta.
-                  </p>
-                </div>
-                <button
-                  type='button'
-                  role='switch'
-                  aria-checked={stripeEnabled}
-                  disabled={!stripeAccountId}
-                  onClick={() => setStripeEnabled((v) => !v)}
+                stripe
+              </span>
+              <span
+                className='t13'
+                style={{marginLeft: 10, color: APP_PALETTE.priceMuted}}
+              >
+                | Para tarjetas de crédito y Apple Pay
+              </span>
+            </div>
+            <p className='t13' style={{margin: '0 0 6px', color: APP_PALETTE.priceMuted, lineHeight: 1.55}}>
+              Stripe es un proveedor de pagos con una estructura de tarifas simple y sin costos ocultos.
+              Configura la conexión entre Stripe y tu aplicación para recibir pagos.
+            </p>
+            <p className='t13' style={{margin: '0 0 20px', color: APP_PALETTE.priceMuted}}>
+              Tienda simple: solo guarda credenciales Stripe de prueba y en vivo.
+              No requiere Stripe Connect ni proceso OAuth.
+            </p>
+
+            {loading && (
+              <p className='t15' style={{color: APP_PALETTE.priceMuted}}>Cargando…</p>
+            )}
+            {!loading && stripeOauthError && (
+              <p className='t14' style={{color: '#a33', marginBottom: 14, maxWidth: 520}}>
+                {stripeOauthError}
+              </p>
+            )}
+            {!loading && stripeSavedOk && (
+              <p className='t14' style={{color: APP_PALETTE.accentJade, fontWeight: 600, marginBottom: 14}}>
+                ✓ Vinculación completada y guardada.
+              </p>
+            )}
+
+            <p className='t13' style={{margin: '0 0 24px', color: APP_PALETTE.priceMuted}}>
+              Completa `pk_test` + `sk_test` para pruebas. Cuando quieras salir en vivo,
+              agrega `pk_live` + `sk_live` y cambia el modo activo.
+            </p>
+
+            {/* Separador */}
+            <div style={{height: 1, backgroundColor: APP_PALETTE.border, marginBottom: 20}} />
+
+            {/* Switch modo activo */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                maxWidth: 520,
+                marginBottom: 20,
+              }}
+            >
+              <div>
+                <span
                   style={{
-                    flexShrink: 0,
-                    width: 52,
-                    height: 30,
-                    borderRadius: 15,
-                    border: 'none',
-                    backgroundColor:
-                      stripeEnabled && stripeAccountId
-                        ? APP_PALETTE.accentJade
-                        : 'rgba(0,0,0,0.2)',
-                    cursor: stripeAccountId ? 'pointer' : 'not-allowed',
-                    position: 'relative',
-                    transition: 'background-color 0.2s ease',
+                    fontFamily: 'Lato, sans-serif',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: '#1C2D18',
                   }}
                 >
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 3,
-                      left: stripeEnabled && stripeAccountId ? 26 : 3,
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      backgroundColor: '#fff',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                      transition: 'left 0.2s ease',
-                    }}
-                  />
-                </button>
-              </div>
-
-              {stripeAccountId && (
-                <div style={{display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18}}>
-                  <button
-                    type='button'
-                    style={{
-                      ...btnPrimary,
-                      opacity: stripeSavingToggle ? 0.7 : 1,
-                      pointerEvents: stripeSavingToggle ? 'none' : 'auto',
-                    }}
-                    onClick={() => void saveStripeToggle()}
-                  >
-                    {stripeSavingToggle ? 'Guardando…' : 'Guardar preferencia Stripe'}
-                  </button>
-                </div>
-              )}
-
-              <div style={{display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center'}}>
-                <button
-                  type='button'
-                  style={{
-                    ...btnPrimary,
-                    opacity:
-                      !stripeClientConfigured || stripeLinkBusy ? 0.55 : 1,
-                    pointerEvents:
-                      !stripeClientConfigured || stripeLinkBusy ? 'none' : 'auto',
-                  }}
-                  onClick={onLinkStripe}
-                >
-                  Linkear cuenta
-                </button>
-                {stripeAccountId && (
-                  <button
-                    type='button'
-                    onClick={() => void disconnectStripe()}
-                    style={{
-                      padding: '10px 18px',
-                      borderRadius: 8,
-                      border: `1px solid ${APP_PALETTE.border}`,
-                      background: 'transparent',
-                      color: APP_PALETTE.priceMuted,
-                      fontFamily: 'Lato, sans-serif',
-                      fontSize: 14,
-                      cursor: stripeDisconnecting ? 'wait' : 'pointer',
-                      fontWeight: 600,
-                    }}
-                    disabled={stripeDisconnecting}
-                  >
-                    {stripeDisconnecting ? 'Desvinculando…' : 'Desvincular cuenta'}
-                  </button>
-                )}
-                {stripeSavedOk && (
-                  <span
-                    className='t14'
-                    style={{color: APP_PALETTE.accentJade, fontWeight: 600}}
-                  >
-                    Guardado
-                  </span>
-                )}
-              </div>
-
-              {!stripeClientConfigured && (
-                <p
-                  className='t12'
-                  style={{
-                    marginTop: 16,
-                    color: APP_PALETTE.priceMuted,
-                    maxWidth: 560,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Configura <code style={{fontSize: 11}}>REACT_APP_STRIPE_CONNECT_CLIENT_ID</code>{' '}
-                  (Dashboard Stripe → Connect → client ID) y despliega la función{' '}
-                  <code style={{fontSize: 11}}>stripe-connect-oauth</code> con{' '}
-                  <code style={{fontSize: 11}}>STRIPE_SECRET_KEY</code> y{' '}
-                  <code style={{fontSize: 11}}>STRIPE_CONNECT_CLIENT_ID</code>.
+                  Modo activo: {stripeUseTestMode ? 'Prueba' : 'En vivo'}
+                </span>
+                <p className='t13' style={{margin: '4px 0 0', color: APP_PALETTE.priceMuted, lineHeight: 1.4}}>
+                  Alterna entre prueba y producción. Guarda para aplicar.
                 </p>
+              </div>
+              <button
+                type='button'
+                role='switch'
+                aria-checked={!stripeUseTestMode}
+                onClick={() => setStripeUseTestMode((v) => !v)}
+                style={{
+                  flexShrink: 0,
+                  width: 56,
+                  height: 30,
+                  borderRadius: 15,
+                  border: 'none',
+                  backgroundColor: stripeUseTestMode ? '#d97706' : APP_PALETTE.accentJade,
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'background-color 0.2s ease',
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 3,
+                    left: stripeUseTestMode ? 3 : 29,
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    backgroundColor: '#fff',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                    transition: 'left 0.2s ease',
+                  }}
+                />
+              </button>
+            </div>
+
+            {/* Botón guardar modo activo */}
+            <div style={{display: 'flex', alignItems: 'center', gap: 14, marginBottom: 4}}>
+              <button
+                type='button'
+                style={{
+                  ...btnPrimary,
+                  opacity: stripeRuntimeSaving ? 0.7 : 1,
+                  pointerEvents: stripeRuntimeSaving ? 'none' : 'auto',
+                }}
+                onClick={() => void saveStripeRuntime()}
+              >
+                {stripeRuntimeSaving ? 'Guardando…' : 'Guardar modo activo'}
+              </button>
+            </div>
+          </div>
+
+          {/* Bloque credenciales — separado y colapsable visualmente */}
+          <div style={{...card, backgroundColor: 'rgba(255,255,255,0.6)'}}>
+            <h3
+              style={{
+                margin: '0 0 4px',
+                fontFamily: 'Lato, sans-serif',
+                fontSize: 15,
+                fontWeight: 700,
+                color: '#1C2D18',
+              }}
+            >
+              Credenciales Stripe
+            </h3>
+            <p className='t12' style={{margin: '0 0 16px', color: APP_PALETTE.priceMuted, lineHeight: 1.5}}>
+              Ingresa tus Publishable Keys y Secret Keys. Solo guarda y usa el switch de modo.
+            </p>
+
+            <label style={labelStyle}>Publishable Key — Prueba (pk_test_...)</label>
+            <input
+              type='text'
+              value={stripePublishableKeyTest}
+              onChange={(e) => setStripePublishableKeyTest(e.target.value)}
+              placeholder='pk_test_...'
+              style={{...inputStyle, marginBottom: 10, maxWidth: '100%'}}
+            />
+            <label style={labelStyle}>Secret Key — Prueba (sk_test_...)</label>
+            <input
+              type='password'
+              value={stripeSecretKeyTest}
+              onChange={(e) => setStripeSecretKeyTest(e.target.value)}
+              placeholder='sk_test_...'
+              style={{...inputStyle, marginBottom: 14, maxWidth: '100%'}}
+            />
+            <label style={labelStyle}>Publishable Key — En vivo (pk_live_...)</label>
+            <input
+              type='text'
+              value={stripePublishableKeyLive}
+              onChange={(e) => setStripePublishableKeyLive(e.target.value)}
+              placeholder='pk_live_...'
+              style={{...inputStyle, marginBottom: 10, maxWidth: '100%'}}
+            />
+            <label style={labelStyle}>Secret Key — En vivo (sk_live_...)</label>
+            <input
+              type='password'
+              value={stripeSecretKeyLive}
+              onChange={(e) => setStripeSecretKeyLive(e.target.value)}
+              placeholder='sk_live_...'
+              style={{...inputStyle, marginBottom: 16, maxWidth: '100%'}}
+            />
+            <div style={{display: 'flex', alignItems: 'center', gap: 14}}>
+              <button
+                type='button'
+                style={{
+                  ...btnPrimary,
+                  opacity: stripeRuntimeSaving ? 0.7 : 1,
+                  pointerEvents: stripeRuntimeSaving ? 'none' : 'auto',
+                }}
+                onClick={() => void saveStripeRuntime()}
+              >
+                {stripeRuntimeSaving ? 'Guardando…' : 'Guardar credenciales'}
+              </button>
+              {stripeSavedOk && (
+                <span className='t13' style={{color: APP_PALETTE.accentJade, fontWeight: 600}}>
+                  Guardado
+                </span>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </div>
       )}
 

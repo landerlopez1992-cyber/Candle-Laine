@@ -28,4 +28,8 @@ export type ProductType = {
   tags: string[];
   style: string;
   imageColor: string;
+  /** Admin: checkbox «Descuento» en `shop_products.flag_discount`. */
+  flag_discount?: boolean;
+  /** Peso en gramos (`shop_products.weight_grams`) para cotización de envío. */
+  weight_grams?: number | null;
 };

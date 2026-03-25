@@ -11,6 +11,7 @@ export type AdminSection =
   | 'users'
   | 'orders'
   | 'products'
+  | 'offers'
   | 'promotions'
   | 'settings';
 
@@ -40,6 +41,13 @@ export const ADMIN_SECTIONS: {
     description:
       'Categorías, subcategorías y productos con imágenes, precios y etiquetas.',
     icon: <svg.AdminNavProductsSvg />,
+  },
+  {
+    id: 'offers',
+    label: 'Ofertas',
+    description:
+      'Cupones: descuento por artículo o pedido, envío gratis y fechas de caducidad.',
+    icon: <svg.TicketSvg />,
   },
   {
     id: 'promotions',

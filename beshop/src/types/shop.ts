@@ -12,6 +12,22 @@ export type ProfileRow = {
   email: string | null;
   full_name: string | null;
   created_at: string;
+  avatar_url?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  is_blocked?: boolean | null;
+  /** Stripe Customer (cus_...) para tarjetas guardadas. */
+  stripe_customer_id?: string | null;
+};
+
+/** Resumen de tarjeta guardada en Stripe (Payment Method). */
+export type StripeSavedCard = {
+  id: string;
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+  holder_name?: string;
 };
 
 export type AdminOrderItemRow = {
@@ -19,6 +35,19 @@ export type AdminOrderItemRow = {
   name: string;
   quantity: number;
   unit_price_cents: number;
+  image_url?: string | null;
+};
+
+/** Claves guardadas en `orders.metadata` (checkout). */
+export type OrderMetadata = {
+  merchandise_total_cents?: string;
+  processing_tax_cents?: string;
+  shipping_cents?: string;
+  shipping_address_id?: string;
+  shipping_address_line?: string;
+  payment_method_display?: string;
+  stripe_payment_intent_id?: string;
+  stripe_charge_id?: string;
 };
 
 export type OrderRow = {
@@ -31,9 +60,11 @@ export type OrderRow = {
   payment_method: string | null;
   created_at: string;
   updated_at: string;
+  metadata?: OrderMetadata | Record<string, unknown> | null;
   profiles: {
     email: string | null;
     full_name: string | null;
+    phone?: string | null;
   } | null;
   order_items?: AdminOrderItemRow[] | null;
 };
@@ -66,6 +97,8 @@ export function orderStatusOptionsForAdmin(
 export type CheckoutPaymentDetailState = {
   method: 'zelle' | 'installments' | 'card';
   cardId?: string;
+  cardLabel?: string;
+  installmentsProvider?: 'affirm' | 'klarna';
 };
 
 /** Fila singleton `shop_payment_settings` (id = 'default'). */
@@ -78,6 +111,23 @@ export type ShopPaymentSettingsRow = {
   /** Cuenta Stripe Connect (acct_...) tras OAuth. */
   stripe_connect_account_id?: string;
   stripe_livemode?: boolean;
+  updated_at: string;
+};
+
+/** Fila singleton `shop_stripe_runtime` (id = 'default', solo admin). */
+export type ShopStripeRuntimeRow = {
+  id: string;
+  use_test_mode: boolean;
+  publishable_key_test: string;
+  publishable_key_live: string;
+  connect_client_id_test: string;
+  connect_client_id_live: string;
+  secret_key_test: string;
+  secret_key_live: string;
+  /** acct_... obtenida tras OAuth en modo TEST */
+  account_id_test: string;
+  /** acct_... obtenida tras OAuth en modo LIVE */
+  account_id_live: string;
   updated_at: string;
 };
 
@@ -96,7 +146,41 @@ export type ShopHomeCountdownRow = {
   enabled: boolean;
   product_id: string | null;
   ends_at: string | null;
+  /** Título / cabecera (texto grande). */
+  headline_text: string;
+  /** Subtítulo / descripción (texto más pequeño). */
   body_text: string;
   button_label: string;
   updated_at: string;
+};
+
+export type ShopCouponType =
+  | 'percent_product'
+  | 'percent_order'
+  | 'free_shipping';
+
+/** Fila `shop_coupons` (cupones creados desde Admin → Ofertas). */
+export type ShopCouponRow = {
+  id: string;
+  code: string;
+  coupon_type: ShopCouponType;
+  discount_percent: number | null;
+  product_id: string | null;
+  display_name: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  is_active: boolean;
+  max_uses: number | null;
+  uses_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Fila `shop_coupon_redemptions` (un uso por usuario y cupón). */
+export type ShopCouponRedemptionRow = {
+  id: string;
+  user_id: string;
+  coupon_id: string;
+  order_id: string | null;
+  used_at: string;
 };
