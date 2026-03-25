@@ -26,6 +26,8 @@ export async function fetchShippingQuoteResult(params: {
   shippingAddressId: string;
   lines: {product_id: string; quantity: number}[];
   promoCode?: string | null;
+  /** Product id from home-countdown free-shipping session; server validates. */
+  countdownFreeShippingProductId?: string | null;
 }): Promise<
   | {ok: true; usd: number; options: ShippingQuoteOption[]; source: string}
   | {ok: false; error: string}
@@ -38,6 +40,8 @@ export async function fetchShippingQuoteResult(params: {
       shipping_address_id: params.shippingAddressId,
       lines: params.lines,
       promo_code: params.promoCode ?? null,
+      countdown_free_shipping_product_id:
+        params.countdownFreeShippingProductId ?? null,
     },
   });
   if (error) {
@@ -92,6 +96,7 @@ export async function fetchShippingQuoteUsd(params: {
   shippingAddressId: string;
   lines: {product_id: string; quantity: number}[];
   promoCode?: string | null;
+  countdownFreeShippingProductId?: string | null;
 }): Promise<{ok: true; usd: number} | {ok: false; error: string}> {
   const r = await fetchShippingQuoteResult(params);
   if (!r.ok) {

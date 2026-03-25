@@ -6,6 +6,7 @@ import {isCheckoutPaymentSelectionReady} from './checkoutPaymentLabel';
 import {getCartCheckoutTotals} from './cartPaymentTotals';
 import {formatSupabaseError} from './supabaseError';
 import {normalizeCouponCode} from './applyShopCoupon';
+import {clearCountdownFreeShippingSession} from './countdownFreeShippingSession';
 
 async function recordCouponRedemption(
   userId: string,
@@ -188,6 +189,8 @@ export async function createOrderFromCheckout(params: {
   await supabase.from('user_cart_items').delete().eq('user_id', userId);
 
   await recordCouponRedemption(userId, orderId, cart.promoCode);
+
+  clearCountdownFreeShippingSession();
 
   return {orderId, error: null};
 }

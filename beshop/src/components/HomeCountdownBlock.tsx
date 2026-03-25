@@ -3,6 +3,7 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {hooks} from '../hooks';
 import {APP_PALETTE} from '../theme/appPalette';
 import type {HomeCountdownDisplay} from '../hooks/useHomeCountdown';
+import {setCountdownFreeShippingSession} from '../utils/countdownFreeShippingSession';
 
 function pad2(n: number): string {
   return String(Math.max(0, Math.floor(n))).padStart(2, '0');
@@ -53,6 +54,9 @@ export const HomeCountdownBlock: React.FC<Props> = ({data}) => {
   const {days, hours, minutes, seconds} = splitRemaining(remaining);
 
   const onBuy = () => {
+    if (data.freeShipping) {
+      setCountdownFreeShippingSession(String(data.product.id), endMs);
+    }
     navigate(`/product/${data.product.id}`, {state: {product: data.product}});
   };
 

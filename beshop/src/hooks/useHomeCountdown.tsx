@@ -11,6 +11,8 @@ export type HomeCountdownDisplay = {
   headlineText: string;
   bodyText: string;
   buttonLabel: string;
+  /** Oferta con envío gratis vía tarjeta countdown (si admin lo activó). */
+  freeShipping: boolean;
   product: ProductType;
 };
 
@@ -31,6 +33,7 @@ function buildDisplay(
     headlineText: row.headline_text?.trim() ?? '',
     bodyText: row.body_text?.trim() ?? '',
     buttonLabel: (row.button_label?.trim() || 'Buy now').slice(0, 80),
+    freeShipping: Boolean(row.free_shipping),
     product,
   };
 }
@@ -49,7 +52,7 @@ export const useHomeCountdown = () => {
     const {data: rowRaw, error} = await supabase
       .from('shop_home_countdown')
       .select(
-        'id, enabled, product_id, ends_at, headline_text, body_text, button_label, updated_at',
+        'id, enabled, product_id, ends_at, free_shipping, headline_text, body_text, button_label, updated_at',
       )
       .eq('id', 'default')
       .maybeSingle();

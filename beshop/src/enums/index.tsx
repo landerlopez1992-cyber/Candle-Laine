@@ -7,7 +7,10 @@ export enum Screens {
 }
 
 export enum Routes {
-  SignIn = '/',
+  /** Tienda (tabs); entrada por defecto al abrir la app. */
+  TabNavigator = '/',
+  /** Iniciar sesión (ya no es la ruta raíz). */
+  SignIn = '/sign-in',
   OrderHistory = '/profile/orders',
   OrderHistoryEmpty = '/profile/orders-empty',
   EditProfile = '/profile/edit',
@@ -26,7 +29,6 @@ export enum Routes {
   LeaveAReviews = '/leave-a-reviews',
   Product = '/product/:id',
   MyPromocodesEmpty = '/profile/promocodes-empty',
-  TabNavigator = '/tab-navigator',
   Verification = '/verification',
   ConfirmationCode = '/confirmation-code',
   SendEmailOtp = '/send-email-otp',

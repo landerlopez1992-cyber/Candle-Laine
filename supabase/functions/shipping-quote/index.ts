@@ -77,6 +77,7 @@ serve(async (req) => {
     shipping_address_id?: string;
     lines?: {product_id: string; quantity: number}[];
     promo_code?: string | null;
+    countdown_free_shipping_product_id?: string | null;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -145,6 +146,50 @@ serve(async (req) => {
     }
     const qty = Math.max(1, Math.floor(Number(line.quantity) || 1));
     qtyByPid.set(pid, (qtyByPid.get(pid) ?? 0) + qty);
+  }
+
+  const countdownFsPid = String(
+    body.countdown_free_shipping_product_id ?? '',
+  ).trim();
+  if (countdownFsPid && uuidRe.test(countdownFsPid)) {
+    const q = qtyByPid.get(countdownFsPid) ?? 0;
+    if (q >= 1) {
+      const {data: cdRow} = await admin
+        .from('shop_home_countdown')
+        .select('product_id, enabled, free_shipping, ends_at')
+        .eq('id', 'default')
+        .maybeSingle();
+      const cd = cdRow as {
+        product_id?: string | null;
+        enabled?: boolean;
+        free_shipping?: boolean;
+        ends_at?: string | null;
+      } | null;
+      if (
+        cd &&
+        cd.enabled === true &&
+        cd.free_shipping === true &&
+        String(cd.product_id ?? '').trim() === countdownFsPid &&
+        cd.ends_at
+      ) {
+        const end = new Date(String(cd.ends_at)).getTime();
+        if (!Number.isNaN(end) && end > Date.now()) {
+          return jsonResponse({
+            ok: true,
+            amount_cents: 0,
+            source: 'countdown_free_shipping',
+            options: [
+              {
+                id: 'countdown_free_shipping',
+                label: 'Free shipping',
+                amount_cents: 0,
+                carrier: 'estimate',
+              },
+            ],
+          });
+        }
+      }
+    }
   }
 
   let totalGrams = 0;

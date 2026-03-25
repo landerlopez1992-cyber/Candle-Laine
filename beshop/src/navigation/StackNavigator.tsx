@@ -13,10 +13,28 @@ const RootLayout: React.FC = () => (
   </>
 );
 
-const stack = createBrowserRouter([
+/**
+ * GitHub Pages sirve la build en /Candle-Laine/ (homepage en package.json → PUBLIC_URL).
+ * En desarrollo, CRA suele inyectar el mismo PUBLIC_URL y el usuario abre localhost:3000/,
+ * lo que rompe el match del Router; el basename solo aplica en producción.
+ */
+const routerBasename =
+  process.env.NODE_ENV === 'production' &&
+  typeof process.env.PUBLIC_URL === 'string' &&
+  process.env.PUBLIC_URL !== '/' &&
+  process.env.PUBLIC_URL.length > 0
+    ? process.env.PUBLIC_URL.replace(/\/$/, '')
+    : '';
+
+const stack = createBrowserRouter(
+  [
   {
     element: <RootLayout />,
     children: [
+  {
+    path: Routes.TabNavigator,
+    element: <TabNavigator />,
+  },
   {
     path: Routes.SignIn,
     element: <screens.SignIn />,
@@ -178,16 +196,14 @@ const stack = createBrowserRouter([
     element: <screens.MyPromocodesEmpty />,
   },
   {
-    path: Routes.TabNavigator,
-    element: <TabNavigator />,
-  },
-  {
     path: Routes.AccountBlocked,
     element: <screens.AccountBlocked />,
   },
     ],
   },
-]);
+  ],
+  routerBasename ? { basename: routerBasename } : {},
+);
 
 export const StackNavigator: React.FC = () => {
   return <RouterProvider router={stack} />;

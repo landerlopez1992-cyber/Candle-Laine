@@ -146,6 +146,8 @@ export type ShopHomeCountdownRow = {
   enabled: boolean;
   product_id: string | null;
   ends_at: string | null;
+  /** Si es true y la oferta sigue activa, envío gratis al incluir el producto (validado en Edge). */
+  free_shipping: boolean;
   /** Título / cabecera (texto grande). */
   headline_text: string;
   /** Subtítulo / descripción (texto más pequeño). */

@@ -41,6 +41,7 @@ import {
   resolveCheckoutShippingUsd,
 } from '../utils/cartPaymentTotals';
 import {fetchShippingQuoteResult} from '../utils/shippingQuoteClient';
+import {getCountdownFreeShippingProductIdForQuote} from '../utils/countdownFreeShippingSession';
 
 const checkoutCardStyle: React.CSSProperties = {
   backgroundColor: APP_PALETTE.cartCardSurface,
@@ -191,6 +192,8 @@ export const Checkout: React.FC = () => {
         shippingAddressId: checkoutShippingAddressId,
         lines,
         promoCode: cart.promoCode?.trim() || null,
+        countdownFreeShippingProductId:
+          getCountdownFreeShippingProductIdForQuote(lines),
       });
       if (cancelled) {
         return;

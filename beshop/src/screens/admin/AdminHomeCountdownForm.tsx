@@ -73,6 +73,7 @@ function fromDatetimeLocalValue(s: string): string | null {
 
 export const AdminHomeCountdownForm: React.FC = () => {
   const [enabled, setEnabled] = useState(false);
+  const [freeShipping, setFreeShipping] = useState(false);
   const [productId, setProductId] = useState<string>('');
   const [endsAtLocal, setEndsAtLocal] = useState('');
   const [headlineText, setHeadlineText] = useState('');
@@ -115,7 +116,7 @@ export const AdminHomeCountdownForm: React.FC = () => {
     const {data, error: qErr} = await supabase
       .from('shop_home_countdown')
       .select(
-        'id, enabled, product_id, ends_at, headline_text, body_text, button_label, updated_at',
+        'id, enabled, product_id, ends_at, free_shipping, headline_text, body_text, button_label, updated_at',
       )
       .eq('id', 'default')
       .maybeSingle();
@@ -128,6 +129,7 @@ export const AdminHomeCountdownForm: React.FC = () => {
     const row = data as ShopHomeCountdownRow | null;
     if (row) {
       setEnabled(Boolean(row.enabled));
+      setFreeShipping(Boolean(row.free_shipping));
       setProductId(row.product_id ?? '');
       setEndsAtLocal(toDatetimeLocalValue(row.ends_at));
       setHeadlineText(
@@ -184,6 +186,7 @@ export const AdminHomeCountdownForm: React.FC = () => {
         enabled,
         product_id: productId.trim() || null,
         ends_at: enabled ? endsIso : null,
+        free_shipping: enabled ? freeShipping : false,
         headline_text: headlineText.trim(),
         body_text: bodyText.trim(),
         button_label: buttonLabel.trim() || 'Buy now',
@@ -249,6 +252,28 @@ export const AdminHomeCountdownForm: React.FC = () => {
               onChange={(e) => setEnabled(e.target.checked)}
             />
             Mostrar en la tienda
+          </label>
+
+          <label
+            style={{
+              ...labelStyle,
+              marginTop: 10,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}
+          >
+            <input
+              type='checkbox'
+              checked={freeShipping}
+              onChange={(e) => setFreeShipping(e.target.checked)}
+              style={{marginTop: 2}}
+            />
+            <span>
+              Envío gratis en esta oferta (solo si el cliente compra el producto
+              destacado desde «Buy now» en la tarjeta de cuenta regresiva; el
+              carrito debe incluir ese producto).
+            </span>
           </label>
 
           <label style={{...labelStyle, marginTop: 14}} htmlFor='admin-cd-product'>

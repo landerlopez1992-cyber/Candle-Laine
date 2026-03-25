@@ -11,6 +11,8 @@ import {generateClientOrderNumber} from '../utils/orderNumber';
 const FALLBACK_HERO =
   'https://george-fx.github.io/beshop_api/assets/other/07.png';
 
+const EMPTY_PRODUCT_IMAGES: string[] = [];
+
 type OrderSuccessfulState = {
   orderNumber?: string;
   orderId?: string;
@@ -116,7 +118,8 @@ export const OrderSuccessful: React.FC = () => {
   const navState = location.state as OrderSuccessfulState | null;
   const orderNumberFromNav = navState?.orderNumber;
   const heroImageUrl = navState?.heroImageUrl;
-  const productImageUrls = navState?.productImageUrls ?? [];
+  const productImageUrls =
+    navState?.productImageUrls ?? EMPTY_PRODUCT_IMAGES;
 
   const orderNumber = useMemo(
     () => orderNumberFromNav ?? generateClientOrderNumber(),
