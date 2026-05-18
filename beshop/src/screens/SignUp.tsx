@@ -8,6 +8,7 @@ import {svg} from '../assets/svg';
 import {actions} from '../store/actions';
 import {components} from '../components';
 import {supabase} from '../supabaseClient';
+import {notifyAdminEmail} from '../utils/adminEmailNotify';
 import {APP_PALETTE} from '../theme/appPalette';
 
 const SIGNUP_EMAIL_STORAGE_KEY = 'candle_signup_email';
@@ -70,7 +71,7 @@ export const SignUp: React.FC = () => {
 
     setLoading(true);
     const redirectTo = `${window.location.origin}${Routes.AuthCallback}`;
-    const {error: signUpError} = await supabase.auth.signUp({
+    const {data: signUpData, error: signUpError} = await supabase.auth.signUp({
       email: trimmedEmail,
       password,
       options: {
@@ -83,6 +84,10 @@ export const SignUp: React.FC = () => {
     if (signUpError) {
       setError(signUpError.message);
       return;
+    }
+
+    if (signUpData.session && signUpData.user?.id) {
+      void notifyAdminEmail({type: 'new_user', userId: signUpData.user.id});
     }
 
     try {

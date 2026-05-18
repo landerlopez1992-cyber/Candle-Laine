@@ -5,8 +5,9 @@ import {APP_PALETTE} from '../../theme/appPalette';
 import type {ShopPaymentSettingsRow, ShopStripeRuntimeRow} from '../../types/shop';
 import {formatSupabaseError} from '../../utils/supabaseError';
 import {AdminMuralSettings} from './AdminMuralSettings';
+import {AdminNotificationSettings} from './AdminNotificationSettings';
 
-type SettingsTab = 'general' | 'payment' | 'stripe' | 'mural';
+type SettingsTab = 'general' | 'payment' | 'stripe' | 'mural' | 'notifications';
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
@@ -219,6 +220,7 @@ export const AdminSettingsPanel: React.FC = () => {
             {id: 'payment' as const, label: 'Métodos de pago'},
             {id: 'stripe' as const, label: 'Stripe'},
             {id: 'mural' as const, label: 'Mural'},
+            {id: 'notifications' as const, label: 'Notificaciones'},
           ] as const
         ).map((t) => {
           const active = tab === t.id;
@@ -711,6 +713,8 @@ export const AdminSettingsPanel: React.FC = () => {
       )}
 
       {tab === 'mural' && <AdminMuralSettings />}
+
+      {tab === 'notifications' && <AdminNotificationSettings />}
     </div>
   );
 };

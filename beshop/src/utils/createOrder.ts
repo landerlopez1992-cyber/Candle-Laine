@@ -4,6 +4,7 @@ import {supabase} from '../supabaseClient';
 import type {ProductType} from '../types';
 import {isCheckoutPaymentSelectionReady} from './checkoutPaymentLabel';
 import {getCartCheckoutTotals} from './cartPaymentTotals';
+import {notifyAdminEmail} from './adminEmailNotify';
 import {formatSupabaseError} from './supabaseError';
 import {normalizeCouponCode} from './applyShopCoupon';
 import {clearCountdownFreeShippingSession} from './countdownFreeShippingSession';
@@ -191,6 +192,8 @@ export async function createOrderFromCheckout(params: {
   await recordCouponRedemption(userId, orderId, cart.promoCode);
 
   clearCountdownFreeShippingSession();
+
+  void notifyAdminEmail({type: 'new_order', orderId});
 
   return {orderId, error: null};
 }

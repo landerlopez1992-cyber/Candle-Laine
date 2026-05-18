@@ -3,6 +3,7 @@ import {useNavigate} from 'react-router-dom';
 
 import {Routes} from '../enums';
 import {supabase} from '../supabaseClient';
+import {notifyAdminEmail} from '../utils/adminEmailNotify';
 import {components} from '../components';
 
 /**
@@ -34,6 +35,15 @@ export const AuthCallback: React.FC = () => {
       data: {subscription},
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        const notifyKey = `admin_user_notified_${session.user.id}`;
+        try {
+          if (!sessionStorage.getItem(notifyKey)) {
+            sessionStorage.setItem(notifyKey, '1');
+            void notifyAdminEmail({type: 'new_user', userId: session.user.id});
+          }
+        } catch {
+          void notifyAdminEmail({type: 'new_user', userId: session.user.id});
+        }
         go(Routes.SignUpAccountCreated);
       }
     });

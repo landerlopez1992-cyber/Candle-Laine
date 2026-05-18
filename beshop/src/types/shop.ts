@@ -114,6 +114,15 @@ export type ShopPaymentSettingsRow = {
   updated_at: string;
 };
 
+/** Fila singleton `shop_notification_settings` (id = 'default', solo admin). */
+export type ShopNotificationSettingsRow = {
+  id: string;
+  recipient_emails: string[];
+  notify_new_orders: boolean;
+  notify_new_users: boolean;
+  updated_at: string;
+};
+
 /** Fila singleton `shop_stripe_runtime` (id = 'default', solo admin). */
 export type ShopStripeRuntimeRow = {
   id: string;

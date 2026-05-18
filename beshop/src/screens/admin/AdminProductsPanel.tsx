@@ -16,6 +16,10 @@ import {
   getShopMediaPublicUrl,
   uploadShopImage,
 } from '../../utils/shopMedia';
+import {
+  ProductPhotoUploadField,
+  type PendingProductPhoto,
+} from '../../components/admin/ProductPhotoUploadField';
 import {formatSupabaseError} from '../../utils/supabaseError';
 
 type InnerTab = 'categories' | 'subcategories' | 'products';
@@ -102,7 +106,7 @@ export const AdminProductsPanel: React.FC = () => {
   const [flagOffer, setFlagOffer] = useState(false);
   const [flagHot, setFlagHot] = useState(false);
   const [flagNew, setFlagNew] = useState(false);
-  const [prodFiles, setProdFiles] = useState<File[]>([]);
+  const [prodPhotos, setProdPhotos] = useState<PendingProductPhoto[]>([]);
   /** Formulario de alta/edición: oculto por defecto para ver solo el listado. */
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -201,7 +205,12 @@ export const AdminProductsPanel: React.FC = () => {
     setFlagOffer(false);
     setFlagHot(false);
     setFlagNew(false);
-    setProdFiles([]);
+    setProdPhotos((prev) => {
+      for (const p of prev) {
+        URL.revokeObjectURL(p.previewUrl);
+      }
+      return [];
+    });
     setEditingProductId(null);
     setProdSubcat('');
   }, []);
@@ -234,7 +243,7 @@ export const AdminProductsPanel: React.FC = () => {
     setFlagOffer(Boolean(p.flag_offer));
     setFlagHot(Boolean(p.flag_hot));
     setFlagNew(Boolean(p.flag_new));
-    setProdFiles([]);
+    setProdPhotos([]);
     setShowProductForm(true);
   }, []);
 
@@ -521,8 +530,11 @@ export const AdminProductsPanel: React.FC = () => {
     const pid = first.id;
     const paths: string[] = [];
     let uploadErr: string | null = null;
-    for (const f of prodFiles) {
-      const {path, error: upErr} = await uploadShopImage(`products/${pid}`, f);
+    for (const photo of prodPhotos) {
+      const {path, error: upErr} = await uploadShopImage(
+        `products/${pid}`,
+        photo.file,
+      );
       if (upErr) {
         uploadErr = formatSupabaseError(upErr);
         break;
@@ -609,15 +621,18 @@ export const AdminProductsPanel: React.FC = () => {
       products.find((row) => row.id === pid)?.image_paths ?? [];
     const paths: string[] = [...existingPaths];
     let uploadErr: string | null = null;
-    for (const f of prodFiles) {
-      const {path, error: upErr} = await uploadShopImage(`products/${pid}`, f);
+    for (const photo of prodPhotos) {
+      const {path, error: upErr} = await uploadShopImage(
+        `products/${pid}`,
+        photo.file,
+      );
       if (upErr) {
         uploadErr = formatSupabaseError(upErr);
         break;
       }
       paths.push(path);
     }
-    if (prodFiles.length && !uploadErr) {
+    if (prodPhotos.length && !uploadErr) {
       const {error: upDb} = await supabase
         .from('shop_products')
         .update({image_paths: paths})
@@ -628,7 +643,7 @@ export const AdminProductsPanel: React.FC = () => {
     }
     if (uploadErr) {
       setError(
-        `Producto actualizado. ${prodFiles.length ? 'Algunas imágenes no se pudieron subir' : ''}: ${uploadErr}`,
+        `Producto actualizado. ${prodPhotos.length ? 'Algunas imágenes no se pudieron subir' : ''}: ${uploadErr}`,
       );
     } else {
       setError(null);
@@ -1296,14 +1311,10 @@ export const AdminProductsPanel: React.FC = () => {
                 Las nuevas fotos se añaden a las ya guardadas.
               </p>
             )}
-            <input
-              type='file'
-              accept='image/*'
-              multiple
-              onChange={(e) =>
-                setProdFiles(Array.from(e.target.files ?? []))
-              }
-              style={{marginBottom: 16, color: APP_PALETTE.textMuted}}
+            <ProductPhotoUploadField
+              photos={prodPhotos}
+              onChange={setProdPhotos}
+              labelStyle={labelStyle}
             />
 
             <div
