@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {generatePath} from 'react-router-dom';
 
 import {hooks} from '../../hooks';
@@ -14,6 +14,7 @@ import {
   centsToDollars,
   dollarsToCents,
   getShopMediaPublicUrl,
+  removeShopImages,
   uploadShopImage,
 } from '../../utils/shopMedia';
 import {
@@ -107,6 +108,8 @@ export const AdminProductsPanel: React.FC = () => {
   const [flagHot, setFlagHot] = useState(false);
   const [flagNew, setFlagNew] = useState(false);
   const [prodPhotos, setProdPhotos] = useState<PendingProductPhoto[]>([]);
+  /** Rutas en Storage que se conservan al editar (el usuario puede quitar algunas). */
+  const [existingImagePaths, setExistingImagePaths] = useState<string[]>([]);
   /** Formulario de alta/edición: oculto por defecto para ver solo el listado. */
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -211,6 +214,7 @@ export const AdminProductsPanel: React.FC = () => {
       }
       return [];
     });
+    setExistingImagePaths([]);
     setEditingProductId(null);
     setProdSubcat('');
   }, []);
@@ -244,17 +248,9 @@ export const AdminProductsPanel: React.FC = () => {
     setFlagHot(Boolean(p.flag_hot));
     setFlagNew(Boolean(p.flag_new));
     setProdPhotos([]);
+    setExistingImagePaths([...(p.image_paths ?? [])]);
     setShowProductForm(true);
   }, []);
-
-  /** Fila actual en listado (para miniaturas al editar; se actualiza tras guardar). */
-  const productBeingEdited = useMemo(
-    () =>
-      editingProductId
-        ? products.find((pr) => pr.id === editingProductId) ?? null
-        : null,
-    [editingProductId, products],
-  );
 
   const addCategory = async () => {
     if (!supabase || !catName.trim()) {
@@ -617,9 +613,9 @@ export const AdminProductsPanel: React.FC = () => {
     }
 
     const pid = editingProductId;
-    const existingPaths =
+    const originalPaths =
       products.find((row) => row.id === pid)?.image_paths ?? [];
-    const paths: string[] = [...existingPaths];
+    const finalPaths: string[] = [...existingImagePaths];
     let uploadErr: string | null = null;
     for (const photo of prodPhotos) {
       const {path, error: upErr} = await uploadShopImage(
@@ -630,20 +626,36 @@ export const AdminProductsPanel: React.FC = () => {
         uploadErr = formatSupabaseError(upErr);
         break;
       }
-      paths.push(path);
+      finalPaths.push(path);
     }
-    if (prodPhotos.length && !uploadErr) {
+
+    const pathsChanged =
+      finalPaths.length !== originalPaths.length ||
+      finalPaths.some((p, i) => p !== originalPaths[i]);
+
+    if (pathsChanged && !uploadErr) {
       const {error: upDb} = await supabase
         .from('shop_products')
-        .update({image_paths: paths})
+        .update({image_paths: finalPaths})
         .eq('id', pid);
       if (upDb) {
         uploadErr = formatSupabaseError(upDb);
+      } else {
+        const removed = originalPaths.filter(
+          (p) => !existingImagePaths.includes(p),
+        );
+        if (removed.length) {
+          const {error: rmErr} = await removeShopImages(removed);
+          if (rmErr) {
+            console.warn('[AdminProducts] storage remove', rmErr);
+          }
+        }
       }
     }
+
     if (uploadErr) {
       setError(
-        `Producto actualizado. ${prodPhotos.length ? 'Algunas imágenes no se pudieron subir' : ''}: ${uploadErr}`,
+        `Producto actualizado. ${prodPhotos.length ? 'Algunas imágenes no se pudieron subir' : 'No se pudieron actualizar las fotos'}: ${uploadErr}`,
       );
     } else {
       setError(null);
@@ -1264,51 +1276,120 @@ export const AdminProductsPanel: React.FC = () => {
             />
 
             <label style={labelStyle}>Fotos (varias)</label>
-            {editingProductId &&
-              (productBeingEdited?.image_paths?.length ?? 0) > 0 && (
-                <div style={{marginBottom: 12}}>
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: APP_PALETTE.textMuted,
-                      margin: '0 0 8px',
-                    }}
-                  >
-                    Fotos actuales en la tienda:
-                  </p>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                    }}
-                  >
-                    {(productBeingEdited?.image_paths ?? []).map((path) => (
+            <p
+              style={{
+                fontSize: 12,
+                color: APP_PALETTE.textMuted,
+                margin: '0 0 10px',
+                lineHeight: 1.45,
+              }}
+            >
+              Puedes subir varias imágenes por producto. En la tienda se muestran
+              en carrusel. Usa «Eliminar» en las guardadas o «Quitar» en las nuevas
+              antes de guardar.
+            </p>
+            {editingProductId && existingImagePaths.length > 0 && (
+              <div style={{marginBottom: 14}}>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: APP_PALETTE.textMuted,
+                    margin: '0 0 8px',
+                    fontWeight: 600,
+                  }}
+                >
+                  Fotos guardadas en la tienda
+                </p>
+                <ul
+                  style={{
+                    listStyle: 'none',
+                    margin: 0,
+                    padding: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}
+                >
+                  {existingImagePaths.map((path, index) => (
+                    <li
+                      key={path}
+                      style={{
+                        display: 'flex',
+                        gap: 12,
+                        alignItems: 'center',
+                        padding: 10,
+                        borderRadius: 10,
+                        border: `1px solid ${APP_PALETTE.border}`,
+                        backgroundColor: APP_PALETTE.imageWell,
+                      }}
+                    >
                       <img
-                        key={path}
                         alt=''
                         src={getShopMediaPublicUrl(path)}
                         style={{
                           width: 72,
                           height: 72,
-                          objectFit: 'cover',
+                          objectFit: 'contain',
                           borderRadius: 8,
-                          border: `1px solid ${APP_PALETTE.border}`,
+                          backgroundColor: '#fff',
+                          flexShrink: 0,
                         }}
                       />
-                    ))}
-                  </div>
-                </div>
-              )}
-            {editingProductId && (
+                      <div style={{flex: 1, minWidth: 0}}>
+                        <p
+                          className='t13'
+                          style={{margin: '0 0 6px', color: '#1C2D18'}}
+                        >
+                          Foto {index + 1}
+                        </p>
+                        <p
+                          className='t12'
+                          style={{
+                            margin: '0 0 8px',
+                            color: APP_PALETTE.textMuted,
+                            wordBreak: 'break-all',
+                          }}
+                        >
+                          {path.split('/').pop()}
+                        </p>
+                        <button
+                          type='button'
+                          onClick={() =>
+                            setExistingImagePaths((prev) =>
+                              prev.filter((p) => p !== path),
+                            )
+                          }
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 6,
+                            border: 'none',
+                            background: 'transparent',
+                            color: '#a33',
+                            fontFamily: 'Lato, sans-serif',
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {editingProductId && existingImagePaths.length === 0 && (
               <p
                 style={{
                   fontSize: 12,
                   color: APP_PALETTE.textMuted,
-                  margin: '0 0 8px',
+                  margin: '0 0 10px',
+                  fontStyle: 'italic',
                 }}
               >
-                Las nuevas fotos se añaden a las ya guardadas.
+                No quedan fotos guardadas. Sube al menos una abajo y guarda el
+                producto.
               </p>
             )}
             <ProductPhotoUploadField

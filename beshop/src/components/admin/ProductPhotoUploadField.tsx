@@ -211,7 +211,7 @@ export const ProductPhotoUploadField: React.FC<Props> = ({
                     disabled={disabled}
                     onClick={() => removePhoto(photo.id)}
                   >
-                    Quitar
+                    Eliminar
                   </button>
                 </div>
               </div>

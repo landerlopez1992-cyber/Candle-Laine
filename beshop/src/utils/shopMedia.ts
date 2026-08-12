@@ -123,6 +123,22 @@ export async function uploadShopImage(
   return {path, error: null};
 }
 
+/** Elimina archivos del bucket (p. ej. al quitar una foto de producto). */
+export async function removeShopImages(
+  storagePaths: string[],
+): Promise<{error: Error | null}> {
+  if (!supabase || !storagePaths.length) {
+    return {error: null};
+  }
+  const {error} = await supabase.storage
+    .from(SHOP_MEDIA_BUCKET)
+    .remove(storagePaths);
+  if (error) {
+    return {error: new Error(formatStorageUploadError(error))};
+  }
+  return {error: null};
+}
+
 export function dollarsToCents(value: string): number {
   const n = parseFloat(value.replace(',', '.').replace(/[^\d.-]/g, ''));
   if (Number.isNaN(n)) {
